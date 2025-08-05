@@ -1,0 +1,11 @@
+rich
+libcst
+networkx
+pycg
+pytest
+pytest-json-report
+mypy
+pylint
+pyvis
+requests
+openai
