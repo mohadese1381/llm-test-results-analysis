@@ -1,0 +1,17 @@
+{
+  "total_tests": 10,
+  "executed_tests": 2,
+  "passed_tests": 1,
+  "failed_tests": 1,
+  "skipped_tests": 0,
+  "untagged_tests": 8,
+  "failed_detail": [
+    {
+      "name": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
+      "file": "test_math_utils.py",
+      "line": null,
+      "error": "MemoryError: Unable to allocate...",
+      "doc": ""
+    }
+  ]
+}

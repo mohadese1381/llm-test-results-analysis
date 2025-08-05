@@ -1,0 +1,164 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 800px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "lightblue", "id": "math_utils.py::add_numbers", "label": "math_utils.py::add_numbers", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e math_utils.py::add_numbers\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 1"}, {"color": "lightblue", "id": "math_utils.py::multiply_numbers", "label": "math_utils.py::multiply_numbers", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e math_utils.py::multiply_numbers\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 4"}, {"color": "lightblue", "id": "math_utils.py::factorial", "label": "math_utils.py::factorial", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e math_utils.py::factorial\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 7"}, {"color": "lightblue", "id": "isinstance", "label": "isinstance", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e isinstance\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e N/A\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e -"}, {"color": "lightblue", "id": "ValueError", "label": "ValueError", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e ValueError\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e N/A\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e -"}, {"color": "lightblue", "id": "range", "label": "range", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e range\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e N/A\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e -"}, {"color": "lightblue", "id": "math_utils.py::fibonacci_sequence", "label": "math_utils.py::fibonacci_sequence", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e math_utils.py::fibonacci_sequence\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 17"}, {"color": "lightblue", "id": "append", "label": "append", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e append\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e N/A\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e -"}, {"color": "lightblue", "id": "math_utils.py::prime_factors", "label": "math_utils.py::prime_factors", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e math_utils.py::prime_factors\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 25"}, {"color": "orange", "id": "test_math_utils.py::TestMathUtils::test_add_numbers", "label": "test_math_utils.py::TestMathUtils::test_add_numbers", "shape": "box", "title": "\u003cb\u003eNode:\u003c/b\u003e test_math_utils.py::TestMathUtils::test_add_numbers\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e test_math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 6"}, {"color": "lightblue", "id": "assertEqual", "label": "assertEqual", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e assertEqual\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e N/A\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e -"}, {"color": "lightblue", "id": "add_numbers", "label": "add_numbers", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e add_numbers\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e N/A\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e -"}, {"color": "orange", "id": "test_math_utils.py::TestMathUtils::test_multiply_numbers", "label": "test_math_utils.py::TestMathUtils::test_multiply_numbers", "shape": "box", "title": "\u003cb\u003eNode:\u003c/b\u003e test_math_utils.py::TestMathUtils::test_multiply_numbers\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e test_math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 10"}, {"color": "lightblue", "id": "multiply_numbers", "label": "multiply_numbers", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e multiply_numbers\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e N/A\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e -"}, {"color": "orange", "id": "test_math_utils.py::TestMathUtils::test_factorial", "label": "test_math_utils.py::TestMathUtils::test_factorial", "shape": "box", "title": "\u003cb\u003eNode:\u003c/b\u003e test_math_utils.py::TestMathUtils::test_factorial\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e test_math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 14"}, {"color": "lightblue", "id": "factorial", "label": "factorial", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e factorial\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e N/A\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e -"}, {"color": "lightblue", "id": "assertRaises", "label": "assertRaises", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e assertRaises\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e N/A\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e -"}, {"color": "orange", "id": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence", "label": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence", "shape": "box", "title": "\u003cb\u003eNode:\u003c/b\u003e test_math_utils.py::TestMathUtils::test_fibonacci_sequence\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e test_math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 20"}, {"color": "lightblue", "id": "fibonacci_sequence", "label": "fibonacci_sequence", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e fibonacci_sequence\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e N/A\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e -"}, {"color": "orange", "id": "test_math_utils.py::TestMathUtils::test_prime_factors", "label": "test_math_utils.py::TestMathUtils::test_prime_factors", "shape": "box", "title": "\u003cb\u003eNode:\u003c/b\u003e test_math_utils.py::TestMathUtils::test_prime_factors\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e test_math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 25"}, {"color": "lightblue", "id": "prime_factors", "label": "prime_factors", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e prime_factors\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e N/A\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e -"}, {"color": "orange", "id": "tests/test_math_utils.py::test_add_numbers", "label": "tests/test_math_utils.py::test_add_numbers", "shape": "box", "title": "\u003cb\u003eNode:\u003c/b\u003e tests/test_math_utils.py::test_add_numbers\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e tests/test_math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 4"}, {"color": "orange", "id": "tests/test_math_utils.py::test_multiply_numbers", "label": "tests/test_math_utils.py::test_multiply_numbers", "shape": "box", "title": "\u003cb\u003eNode:\u003c/b\u003e tests/test_math_utils.py::test_multiply_numbers\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e tests/test_math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 8"}, {"color": "orange", "id": "tests/test_math_utils.py::test_factorial", "label": "tests/test_math_utils.py::test_factorial", "shape": "box", "title": "\u003cb\u003eNode:\u003c/b\u003e tests/test_math_utils.py::test_factorial\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e tests/test_math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 12"}, {"color": "lightblue", "id": "raises", "label": "raises", "shape": "ellipse", "title": "\u003cb\u003eNode:\u003c/b\u003e raises\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e N/A\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e -"}, {"color": "orange", "id": "tests/test_math_utils.py::test_fibonacci_sequence", "label": "tests/test_math_utils.py::test_fibonacci_sequence", "shape": "box", "title": "\u003cb\u003eNode:\u003c/b\u003e tests/test_math_utils.py::test_fibonacci_sequence\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e tests/test_math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 18"}, {"color": "orange", "id": "tests/test_math_utils.py::test_prime_factors", "label": "tests/test_math_utils.py::test_prime_factors", "shape": "box", "title": "\u003cb\u003eNode:\u003c/b\u003e tests/test_math_utils.py::test_prime_factors\u003cbr\u003e\u003cb\u003eFile:\u003c/b\u003e tests/test_math_utils.py\u003cbr\u003e\u003cb\u003eLine:\u003c/b\u003e 23"}]);
+                  edges = new vis.DataSet([{"arrows": "to", "from": "math_utils.py::factorial", "to": "isinstance"}, {"arrows": "to", "from": "math_utils.py::factorial", "to": "ValueError"}, {"arrows": "to", "from": "math_utils.py::factorial", "to": "range"}, {"arrows": "to", "from": "math_utils.py::fibonacci_sequence", "to": "isinstance"}, {"arrows": "to", "from": "math_utils.py::fibonacci_sequence", "to": "ValueError"}, {"arrows": "to", "from": "math_utils.py::fibonacci_sequence", "to": "range"}, {"arrows": "to", "from": "math_utils.py::fibonacci_sequence", "to": "append"}, {"arrows": "to", "from": "math_utils.py::prime_factors", "to": "isinstance"}, {"arrows": "to", "from": "math_utils.py::prime_factors", "to": "ValueError"}, {"arrows": "to", "from": "math_utils.py::prime_factors", "to": "append"}, {"arrows": "to", "from": "test_math_utils.py::TestMathUtils::test_add_numbers", "to": "assertEqual"}, {"arrows": "to", "from": "test_math_utils.py::TestMathUtils::test_add_numbers", "to": "add_numbers"}, {"arrows": "to", "from": "test_math_utils.py::TestMathUtils::test_multiply_numbers", "to": "assertEqual"}, {"arrows": "to", "from": "test_math_utils.py::TestMathUtils::test_multiply_numbers", "to": "multiply_numbers"}, {"arrows": "to", "from": "test_math_utils.py::TestMathUtils::test_factorial", "to": "assertEqual"}, {"arrows": "to", "from": "test_math_utils.py::TestMathUtils::test_factorial", "to": "factorial"}, {"arrows": "to", "from": "test_math_utils.py::TestMathUtils::test_factorial", "to": "assertRaises"}, {"arrows": "to", "from": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence", "to": "assertEqual"}, {"arrows": "to", "from": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence", "to": "fibonacci_sequence"}, {"arrows": "to", "from": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence", "to": "assertRaises"}, {"arrows": "to", "from": "test_math_utils.py::TestMathUtils::test_prime_factors", "to": "assertEqual"}, {"arrows": "to", "from": "test_math_utils.py::TestMathUtils::test_prime_factors", "to": "prime_factors"}, {"arrows": "to", "from": "test_math_utils.py::TestMathUtils::test_prime_factors", "to": "assertRaises"}, {"arrows": "to", "from": "tests/test_math_utils.py::test_add_numbers", "to": "add_numbers"}, {"arrows": "to", "from": "tests/test_math_utils.py::test_multiply_numbers", "to": "multiply_numbers"}, {"arrows": "to", "from": "tests/test_math_utils.py::test_factorial", "to": "factorial"}, {"arrows": "to", "from": "tests/test_math_utils.py::test_factorial", "to": "raises"}, {"arrows": "to", "from": "tests/test_math_utils.py::test_fibonacci_sequence", "to": "fibonacci_sequence"}, {"arrows": "to", "from": "tests/test_math_utils.py::test_fibonacci_sequence", "to": "raises"}, {"arrows": "to", "from": "tests/test_math_utils.py::test_prime_factors", "to": "prime_factors"}, {"arrows": "to", "from": "tests/test_math_utils.py::test_prime_factors", "to": "raises"}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "forceAtlas2Based": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.01,
+            "damping": 0.4,
+            "gravitationalConstant": -50,
+            "springConstant": 0.08,
+            "springLength": 100
+        },
+        "solver": "forceAtlas2Based",
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

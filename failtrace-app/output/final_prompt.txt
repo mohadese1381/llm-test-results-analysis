@@ -1,0 +1,114 @@
+You are a senior software engineer and AI analyst. Your job is to deeply analyze failed unit tests or integration tests, trace through the critical call paths, and pinpoint root causes in the code. You will answer in STRICT JSON using the schema below, and include your step-by-step reasoning.
+
+GRAPH SUMMARY: 27 nodes, 31 edges.
+
+TEST SUMMARY:
+• Total: 10
+• Executed: 2 (✅1, ❌1, ⚠️0)
+• Failures detail:
+  - test_math_utils.py::TestMathUtils::test_fibonacci_sequence: MemoryError: Unable to allocate...
+
+CRITICAL PATHS for each failed test:
+
+Test: test_math_utils.py::TestMathUtils::test_fibonacci_sequence
+Error: MemoryError: Unable to allocate...
+Upstream:
+Downstream:
+  • test_math_utils.py::TestMathUtils::test_fibonacci_sequence → assertEqual
+  • test_math_utils.py::TestMathUtils::test_fibonacci_sequence → assertRaises
+  • test_math_utils.py::TestMathUtils::test_fibonacci_sequence → math_utils.py::fibonacci_sequence
+
+FUNCTION SNIPPETS:
+
+math_utils.py::fibonacci_sequence (line 17):
+"""
+
+"""
+    def fibonacci_sequence(n):
+        if not isinstance(n, int) or n < 0:
+            raise ValueError("ورودی باید عدد صحیح غیرمنفی باشد")
+        fib = [0, 1]
+        for i in range(2, n):
+            fib.append(fib[i-1] + fib[i-2])
+        return fib[:n]
+
+FEW-SHOT EXAMPLES:
+
+INPUT:
+GRAPH SUMMARY: 152 nodes, 289 edges.
+
+TEST SUMMARY:
+• Total: 87
+• Executed: 87 (✅76, ❌2, ⚠️9)
+• Failures detail:
+  - tests/test_math.py::test_divide_by_zero: ZeroDivisionError: division by zero
+
+CRITICAL PATHS for each failed test:
+
+Test: tests/test_math.py::test_divide_by_zero
+Error: ZeroDivisionError: division by zero
+Upstream:
+  • math_utils.py::safe_divide → math_utils.py::_normalize_inputs
+Downstream:
+  • tests/test_math.py::test_divide_by_zero
+
+FUNCTION SNIPPETS:
+
+math_utils.py::safe_divide (line 42):
+"""
+Divide a by b, guarding invalid inputs.
+"""
+    def safe_divide(a, b):
+        return a / b
+
+math_utils.py::_normalize_inputs (line 12):
+"""
+Ensure inputs are numeric and non-null.
+"""
+    def _normalize_inputs(a, b):
+        ...
+OUTPUT:
+{
+  "analysis": [
+    {
+      "test_name": "tests/test_math.py::test_divide_by_zero",
+      "error": "ZeroDivisionError: division by zero",
+      "call_path": ["math_utils.py::safe_divide", "math_utils.py::_normalize_inputs"],
+      "reasoning": [
+        "safe_divide بدون بررسی b==0 مستقیم a/b انجام می‌دهد",
+        "مسیر بحرانی نشان می‌دهد normalize_inputs تضمین صفر نبودن b را ارائه نمی‌دهد"
+      ],
+      "root_cause": "عدم بررسی تقسیم بر صفر در safe_divide",
+      "suggested_fixes": [
+        "قبل از تقسیم، اگر b==0 مقدار امن (مثلاً None یا 0) برگردان یا استثنا کنترل‌شده بده",
+        "در _normalize_inputs شرط صفر نبودن b را enforce کن"
+      ]
+    }
+  ]
+}
+
+Now produce your analysis as JSON ONLY, strictly following this schema:
+```json
+{
+  "analysis": [
+    {
+      "test_name": "<string>",
+      "error": "<string>",
+      "call_path": [
+        "<func1>",
+        "..."
+      ],
+      "reasoning": [
+        "<step 1 chain-of-thought>",
+        "..."
+      ],
+      "root_cause": "<one-sentence summary>",
+      "suggested_fixes": [
+        "<fix 1>",
+        "<fix 2>"
+      ]
+    }
+  ]
+}
+```
+Include numbered `reasoning` steps to expose your chain-of-thought.
