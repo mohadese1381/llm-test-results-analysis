@@ -1,0 +1,17 @@
+{
+  "total_tests": 10,
+  "executed_tests": 5,
+  "passed_tests": 4,
+  "failed_tests": 1,
+  "skipped_tests": 0,
+  "untagged_tests": 5,
+  "failed_detail": [
+    {
+      "name": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
+      "file": "test_math_utils.py",
+      "line": null,
+      "error": "Traceback (most recent call last):\n  File \"C:\\Users\\Mohadese\\Desktop\\test-python\\test_math_utils.py\", line 22, in test_fibonacci_sequence\n    with self.assertRaises(MemoryError):\nAssertionError: MemoryError not raised",
+      "doc": ""
+    }
+  ]
+}

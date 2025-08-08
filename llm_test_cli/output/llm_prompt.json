@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "project_path": "C:\\Users\\Mohadese\\VSCodeProjects\\MathUtility",
+    "log_path": "C:\\Users\\Mohadese\\Desktop\\test-python\\test-results\\TEST-test_math_utils.TestMathUtils-20250807203916.xml",
+    "language": "python",
+    "graph": {
+      "nodes": 27,
+      "edges": 31
+    }
+  },
+  "summary": {
+    "total_tests": 10,
+    "executed_tests": 5,
+    "passed_tests": 4,
+    "failed_tests": 1,
+    "skipped_tests": 0,
+    "untagged_tests": 5,
+    "failed_detail": [
+      {
+        "name": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
+        "file": "test_math_utils.py",
+        "line": null,
+        "error": "Traceback (most recent call last):\n  File \"C:\\Users\\Mohadese\\Desktop\\test-python\\test_math_utils.py\", line 22, in test_fibonacci_sequence\n    with self.assertRaises(MemoryError):\nAssertionError: MemoryError not raised",
+        "doc": ""
+      }
+    ]
+  },
+  "critical_paths": {
+    "test_math_utils.py::TestMathUtils::test_fibonacci_sequence": {
+      "error": "Traceback (most recent call last):\n  File \"C:\\Users\\Mohadese\\Desktop\\test-python\\test_math_utils.py\", line 22, in test_fibonacci_sequence\n    with self.assertRaises(MemoryError):\nAssertionError: MemoryError not raised",
+      "upstream": [],
+      "downstream": [
+        [
+          {
+            "node": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
+            "type": "test",
+            "file": "test_math_utils.py",
+            "line": 20,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "assertEqual",
+            "type": "external",
+            "file": null,
+            "line": null,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
+            "type": "test",
+            "file": "test_math_utils.py",
+            "line": 20,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "assertRaises",
+            "type": "external",
+            "file": null,
+            "line": null,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
+            "type": "test",
+            "file": "test_math_utils.py",
+            "line": 20,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "math_utils.py::fibonacci_sequence",
+            "type": "function",
+            "file": "math_utils.py",
+            "line": 17,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": ""
+          }
+        ]
+      ]
+    }
+  }
+}

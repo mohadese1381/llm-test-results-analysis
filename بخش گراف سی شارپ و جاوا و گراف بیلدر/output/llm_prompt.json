@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "project_path": "C:\\Users\\Mohadese\\VSCodeProjects\\MathUtility",
+    "log_path": "C:\\Users\\Mohadese\\Desktop\\test\\logs.json",
+    "graph": {
+      "nodes": 27,
+      "edges": 31
+    }
+  },
+  "summary": {
+    "total_tests": 10,
+    "executed_tests": 2,
+    "passed_tests": 1,
+    "failed_tests": 1,
+    "skipped_tests": 0,
+    "untagged_tests": 8,
+    "failed_detail": [
+      {
+        "name": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
+        "file": "test_math_utils.py",
+        "line": null,
+        "error": "MemoryError: Unable to allocate...",
+        "doc": ""
+      }
+    ]
+  },
+  "critical_paths": {
+    "test_math_utils.py::TestMathUtils::test_fibonacci_sequence": {
+      "error": "MemoryError: Unable to allocate...",
+      "upstream": [],
+      "downstream": [
+        [
+          {
+            "node": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
+            "type": "test",
+            "file": "test_math_utils.py",
+            "line": 20,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "assertEqual",
+            "type": "external",
+            "file": null,
+            "line": null,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
+            "type": "test",
+            "file": "test_math_utils.py",
+            "line": 20,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "assertRaises",
+            "type": "external",
+            "file": null,
+            "line": null,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
+            "type": "test",
+            "file": "test_math_utils.py",
+            "line": 20,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "math_utils.py::fibonacci_sequence",
+            "type": "function",
+            "file": "math_utils.py",
+            "line": 17,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": ""
+          }
+        ]
+      ]
+    }
+  }
+}
