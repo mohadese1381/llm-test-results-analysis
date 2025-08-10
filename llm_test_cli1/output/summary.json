@@ -1,0 +1,17 @@
+{
+  "total_tests": 24,
+  "executed_tests": 3,
+  "passed_tests": 2,
+  "failed_tests": 1,
+  "skipped_tests": 0,
+  "untagged_tests": 21,
+  "failed_detail": [
+    {
+      "name": "src/test/java/BookTest.java::BookTest::testGetTitle",
+      "file": "src/test/java/BookTest.java",
+      "line": null,
+      "error": "org.junit.ComparisonFailure: expected:<TODAY IS THE DAY[..]> but was:<TODAY IS THE DAY[]>\n\tat BookTest.testGetTitle(BookTest.java:55)",
+      "doc": ""
+    }
+  ]
+}

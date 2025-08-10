@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "project_path": "C:\\Users\\Mohadese\\Desktop\\test-java\\unit-testing-java",
+    "log_path": "C:\\Users\\Mohadese\\Desktop\\test-java\\unit-testing-java\\target\\surefire-reports\\TEST-BookTest.xml",
+    "language": "java",
+    "graph": {
+      "nodes": 46,
+      "edges": 53
+    }
+  },
+  "summary": {
+    "total_tests": 24,
+    "executed_tests": 3,
+    "passed_tests": 2,
+    "failed_tests": 1,
+    "skipped_tests": 0,
+    "untagged_tests": 21,
+    "failed_detail": [
+      {
+        "name": "src/test/java/BookTest.java::BookTest::testGetTitle",
+        "file": "src/test/java/BookTest.java",
+        "line": null,
+        "error": "org.junit.ComparisonFailure: expected:<TODAY IS THE DAY[..]> but was:<TODAY IS THE DAY[]>\n\tat BookTest.testGetTitle(BookTest.java:55)",
+        "doc": ""
+      }
+    ]
+  },
+  "critical_paths": {
+    "src/test/java/BookTest.java::BookTest::testGetTitle": {
+      "error": "org.junit.ComparisonFailure: expected:<TODAY IS THE DAY[..]> but was:<TODAY IS THE DAY[]>\n\tat BookTest.testGetTitle(BookTest.java:55)",
+      "upstream": [],
+      "downstream": [
+        [
+          {
+            "node": "src/test/java/BookTest.java::BookTest::testGetTitle",
+            "type": "test",
+            "file": "src/test/java/BookTest.java",
+            "line": 46,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "src/main/java/Book.java::Book::getTitle",
+            "type": "function",
+            "file": "src/main/java/Book.java",
+            "line": 5,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": ""
+          },
+          {
+            "node": "src/main/java/AgaUtils.java::AgaUtils::getTextUppercase",
+            "type": "function",
+            "file": "src/main/java/AgaUtils.java",
+            "line": 3,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "src/test/java/BookTest.java::BookTest::testGetTitle",
+            "type": "test",
+            "file": "src/test/java/BookTest.java",
+            "line": 46,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "src/main/java/Book.java::Book::getTitle",
+            "type": "function",
+            "file": "src/main/java/Book.java",
+            "line": 5,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": ""
+          }
+        ]
+      ]
+    }
+  }
+}
