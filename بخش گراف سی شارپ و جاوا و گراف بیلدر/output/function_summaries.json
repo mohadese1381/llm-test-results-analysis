@@ -1,8 +1,0 @@
-{
-  "math_utils.py::fibonacci_sequence": {
-    "file": "math_utils.py",
-    "line": 17,
-    "docstring": "",
-    "code": "def fibonacci_sequence(n):\n    if not isinstance(n, int) or n < 0:\n        raise ValueError(\"ورودی باید عدد صحیح غیرمنفی باشد\")\n    fib = [0, 1]\n    for i in range(2, n):\n        fib.append(fib[i-1] + fib[i-2])\n    return fib[:n]"
-  }
-}

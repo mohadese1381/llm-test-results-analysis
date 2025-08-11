@@ -1,91 +1,274 @@
 {
   "meta": {
-    "project_path": "C:\\Users\\Mohadese\\VSCodeProjects\\MathUtility",
-    "log_path": "C:\\Users\\Mohadese\\Desktop\\test\\logs.json",
+    "project_path": "C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples",
+    "log_path": "C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\test-results\\TEST-pytest-samples.xml",
+    "language": "python",
     "graph": {
-      "nodes": 27,
-      "edges": 31
+      "nodes": 85,
+      "edges": 84
     }
   },
   "summary": {
-    "total_tests": 10,
-    "executed_tests": 2,
-    "passed_tests": 1,
-    "failed_tests": 1,
-    "skipped_tests": 0,
-    "untagged_tests": 8,
+    "total_tests": 29,
+    "executed_tests": 24,
+    "passed_tests": 19,
+    "failed_tests": 4,
+    "skipped_tests": 1,
+    "untagged_tests": 5,
     "failed_detail": [
       {
-        "name": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
-        "file": "test_math_utils.py",
+        "name": "tests/smoke/test_basic.py::test_will_fail",
+        "file": "tests/smoke/test_basic.py",
         "line": null,
-        "error": "MemoryError: Unable to allocate...",
+        "error": "AssertionError: Function should return double of the value\nassert 2 == 4",
+        "doc": ""
+      },
+      {
+        "name": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
+        "file": "tests/unit/test_delayed_assert.py",
+        "line": null,
+        "error": "AssertionError: #x1B[93m\n\nassert_expectations() called at#x1B[0m\n#x1B[4m#x1B[94m\"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:13\"#x1B[0m#x1B[93m in test_delayed_response_with_error()\n\n#x1B[91m#x1B[4mFailed Expectations : 1\n#x1B[0m\n1: #x1B[91mFailed at \"#x1B[0m#x1B[94m#x1B[4mC:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:12#x1B[0m#x1B[91m\", in test_delayed_response_with_error()\n\t#x1B[1m#x1B[4mErrorMessage:#x1B[0m#x1B[91m\t{\"key\": \"value\"}#x1B[0m\n    expect(response.json() == {}, response.text)",
+        "doc": ""
+      },
+      {
+        "name": "tests/unit/test_mocks.py::test_mock_patching",
+        "file": "tests/unit/test_mocks.py",
+        "line": null,
+        "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.",
+        "doc": ""
+      },
+      {
+        "name": "tests/unit/test_mocks.py::test_mock_side_effect",
+        "file": "tests/unit/test_mocks.py",
+        "line": null,
+        "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.",
         "doc": ""
       }
     ]
   },
   "critical_paths": {
-    "test_math_utils.py::TestMathUtils::test_fibonacci_sequence": {
-      "error": "MemoryError: Unable to allocate...",
+    "tests/smoke/test_basic.py::test_will_fail": {
+      "error": "AssertionError: Function should return double of the value\nassert 2 == 4",
       "upstream": [],
       "downstream": [
         [
           {
-            "node": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
+            "node": "tests/smoke/test_basic.py::test_will_fail",
             "type": "test",
-            "file": "test_math_utils.py",
-            "line": 20,
+            "file": "tests/smoke/test_basic.py",
+            "line": 27,
             "is_test": true,
             "status": "failed",
             "docstring": ""
           },
           {
-            "node": "assertEqual",
-            "type": "external",
-            "file": null,
-            "line": null,
-            "is_test": false,
-            "status": "not_executed",
-            "docstring": ""
-          }
-        ],
-        [
-          {
-            "node": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
-            "type": "test",
-            "file": "test_math_utils.py",
-            "line": 20,
-            "is_test": true,
-            "status": "failed",
-            "docstring": ""
-          },
-          {
-            "node": "assertRaises",
-            "type": "external",
-            "file": null,
-            "line": null,
-            "is_test": false,
-            "status": "not_executed",
-            "docstring": ""
-          }
-        ],
-        [
-          {
-            "node": "test_math_utils.py::TestMathUtils::test_fibonacci_sequence",
-            "type": "test",
-            "file": "test_math_utils.py",
-            "line": 20,
-            "is_test": true,
-            "status": "failed",
-            "docstring": ""
-          },
-          {
-            "node": "math_utils.py::fibonacci_sequence",
+            "node": "source/sut.py::SystemUnderTest::function",
             "type": "function",
-            "file": "math_utils.py",
-            "line": 17,
+            "file": "source/sut.py",
+            "line": 11,
             "is_test": false,
             "status": "not_executed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "tests/smoke/test_basic.py::test_will_fail",
+            "type": "test",
+            "file": "tests/smoke/test_basic.py",
+            "line": 27,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "source/sut.py::SystemUnderTest::function",
+            "type": "function",
+            "file": "source/sut.py",
+            "line": 11,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "tests/smoke/test_basic.py::test_will_fail",
+            "type": "test",
+            "file": "tests/smoke/test_basic.py",
+            "line": 27,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "source/sut.py::SystemUnderTest::function",
+            "type": "function",
+            "file": "source/sut.py",
+            "line": 11,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "tests/smoke/test_basic.py::test_will_fail",
+            "type": "test",
+            "file": "tests/smoke/test_basic.py",
+            "line": 27,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          }
+        ]
+      ]
+    },
+    "tests/unit/test_delayed_assert.py::test_delayed_response_with_error": {
+      "error": "AssertionError: #x1B[93m\n\nassert_expectations() called at#x1B[0m\n#x1B[4m#x1B[94m\"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:13\"#x1B[0m#x1B[93m in test_delayed_response_with_error()\n\n#x1B[91m#x1B[4mFailed Expectations : 1\n#x1B[0m\n1: #x1B[91mFailed at \"#x1B[0m#x1B[94m#x1B[4mC:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:12#x1B[0m#x1B[91m\", in test_delayed_response_with_error()\n\t#x1B[1m#x1B[4mErrorMessage:#x1B[0m#x1B[91m\t{\"key\": \"value\"}#x1B[0m\n    expect(response.json() == {}, response.text)",
+      "upstream": [],
+      "downstream": [
+        [
+          {
+            "node": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
+            "type": "test",
+            "file": "tests/unit/test_delayed_assert.py",
+            "line": 5,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
+            "type": "test",
+            "file": "tests/unit/test_delayed_assert.py",
+            "line": 5,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
+            "type": "test",
+            "file": "tests/unit/test_delayed_assert.py",
+            "line": 5,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
+            "type": "test",
+            "file": "tests/unit/test_delayed_assert.py",
+            "line": 5,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          }
+        ]
+      ]
+    },
+    "tests/unit/test_mocks.py::test_mock_patching": {
+      "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.",
+      "upstream": [],
+      "downstream": [
+        [
+          {
+            "node": "tests/unit/test_mocks.py::test_mock_patching",
+            "type": "test",
+            "file": "tests/unit/test_mocks.py",
+            "line": 18,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "tests/unit/test_mocks.py::test_mock_patching",
+            "type": "test",
+            "file": "tests/unit/test_mocks.py",
+            "line": 18,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "tests/unit/test_mocks.py::test_mock_patching",
+            "type": "test",
+            "file": "tests/unit/test_mocks.py",
+            "line": 18,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          }
+        ]
+      ]
+    },
+    "tests/unit/test_mocks.py::test_mock_side_effect": {
+      "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.",
+      "upstream": [],
+      "downstream": [
+        [
+          {
+            "node": "tests/unit/test_mocks.py::test_mock_side_effect",
+            "type": "test",
+            "file": "tests/unit/test_mocks.py",
+            "line": 27,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "tests/unit/test_mocks.py::test_mock_side_effect",
+            "type": "test",
+            "file": "tests/unit/test_mocks.py",
+            "line": 27,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "tests/unit/test_mocks.py::test_mock_side_effect",
+            "type": "test",
+            "file": "tests/unit/test_mocks.py",
+            "line": 27,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "tests/unit/test_mocks.py::test_mock_side_effect",
+            "type": "test",
+            "file": "tests/unit/test_mocks.py",
+            "line": 27,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "tests/unit/test_mocks.py::test_mock_side_effect",
+            "type": "test",
+            "file": "tests/unit/test_mocks.py",
+            "line": 27,
+            "is_test": true,
+            "status": "failed",
             "docstring": ""
           }
         ]

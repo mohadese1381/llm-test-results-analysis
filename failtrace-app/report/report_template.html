@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>گزارش تحلیل تست‌ها</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0e11;--card:#141a22;--muted:#8ea0b5;--text:#e6eef7;--accent:#3b82f6;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--flaky:#a855f7;--sep:#1f2a37}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Vazirmatn",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue","Noto Sans",sans-serif}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.header{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+.h-left{display:flex;gap:12px;align-items:center}
+.badge{background:var(--sep);padding:6px 10px;border-radius:10px;font-size:12px;color:var(--muted)}
+.title{font-size:22px;font-weight:800;margin:0}
+.sub{font-size:13px;color:var(--muted)}
+.actions{display:flex;gap:8px}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.card{background:var(--card);border:1px solid var(--sep);border-radius:16px;padding:16px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{background:#0f1520;border:1px solid var(--sep);border-radius:14px;padding:12px}
+.kpi h4{margin:0 0 6px 0;font-size:12px;color:var(--muted);font-weight:600}
+.kpi .v{font-size:20px;font-weight:800}
+.kpi.ok .v{color:var(--ok)}
+.kpi.err .v{color:var(--err)}
+.kpi.warn .v{color:var(--warn)}
+.kpi.flaky .v{color:var(--flaky)}
+.section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title h3{margin:0;font-size:16px}
+.table{width:100%;border-collapse:separate;border-spacing:0 8px}
+.table th{color:var(--muted);font-weight:600;text-align:right;font-size:12px;padding:8px 10px}
+.table td{background:#0f1520;border:1px solid var(--sep);border-radius:10px;padding:10px;font-size:13px}
+.table tr td:first-child{border-top-right-radius:10px;border-bottom-right-radius:10px}
+.table tr td:last-child{border-top-left-radius:10px;border-bottom-left-radius:10px}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{background:#0f1520;border:1px solid var(--sep);color:var(--muted);padding:6px 10px;border-radius:999px;font-size:12px}
+.trace{white-space:pre-wrap;line-height:1.8;color:#d7e2ee;background:#0f1520;border:1px solid var(--sep);border-radius:12px;padding:12px}
+@media (max-width:960px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+@media print{.actions{display:none}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="h-left">
+      <div>
+        <p class="title" id="projName"></p>
+        <p class="sub" id="projMeta"></p>
+      </div>
+      <span class="badge" id="runDate"></span>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="window.print()">چاپ / PDF</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="kpis">
+      <div class="kpi"><h4>تعداد کل</h4><div class="v" id="kTotal">0</div></div>
+      <div class="kpi ok"><h4>موفق</h4><div class="v" id="kPassed">0</div></div>
+      <div class="kpi err"><h4>ناموفق</h4><div class="v" id="kFailed">0</div></div>
+      <div class="kpi warn"><h4>اسکیپ</h4><div class="v" id="kSkipped">0</div></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="section-title"><h3>نمودار وضعیت تست‌ها</h3></div>
+      <canvas id="testsOverviewChart" height="240"></canvas>
+    </div>
+    <div class="card">
+      <div class="section-title"><h3>توزیع انواع خطا</h3></div>
+      <canvas id="failureTypesChart" height="240"></canvas>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:16px">
+    <div class="card">
+      <div class="section-title"><h3>بینش‌ها</h3></div>
+      <div class="pills" id="insights"></div>
+    </div>
+    <div class="card">
+      <div class="section-title"><h3>ریسک‌ها</h3></div>
+      <div class="pills" id="risks"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="section-title"><h3>موارد ناموفق</h3></div>
+    <table class="table" id="failTable">
+      <thead>
+        <tr>
+          <th>عنوان</th>
+          <th>نوع</th>
+          <th>پیام</th>
+          <th>مسیر</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="section-title"><h3>ردّ استدلال</h3></div>
+    <div class="trace" id="trace"></div>
+  </div>
+</div>
+
+<script>
+const REPORT = __REPORT_JSON__;
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  const r = REPORT || {};
+  const proj = r.project || {};
+  const metrics = r.metrics || {};
+  const ch = (r.charts||{});
+  const t = (ch.testsOverview||{});
+  const f = Array.isArray(ch.failureTypes)? ch.failureTypes : [];
+
+  document.getElementById('projName').textContent = proj.name || '—';
+  document.getElementById('projMeta').textContent = `مدل: ${proj.model || '—'} • اجرای گراف: ${proj.runId ?? '—'}`;
+  document.getElementById('runDate').textContent = r.project?.date || '';
+
+  document.getElementById('kTotal').textContent = metrics.total ?? 0;
+  document.getElementById('kPassed').textContent = t.passed ?? metrics.passed ?? 0;
+  document.getElementById('kFailed').textContent = t.failed ?? metrics.failed ?? 0;
+  document.getElementById('kSkipped').textContent = t.skipped ?? metrics.skipped ?? 0;
+
+  const insights = Array.isArray(r.insights)? r.insights : [];
+  const risks = Array.isArray(r.risks)? r.risks : [];
+  const fail = Array.isArray(r.failures)? r.failures : [];
+
+  const insEl = document.getElementById('insights');
+  insights.forEach(x=>{
+    const d=document.createElement('span');
+    d.className='pill';
+    d.textContent = `${x.title || ''} — ${x.detail || ''}`.trim();
+    insEl.appendChild(d);
+  });
+
+  const riskEl = document.getElementById('risks');
+  risks.forEach(x=>{
+    const d=document.createElement('span');
+    d.className='pill';
+    d.textContent = `${x.level ? 'سطح: '+x.level : ''}${x.title? ' — '+x.title:''}${x.action? ' — اقدام: '+x.action:''}`.trim();
+    riskEl.appendChild(d);
+  });
+
+  const tbody = document.querySelector('#failTable tbody');
+  fail.forEach(item=>{
+    const tr=document.createElement('tr');
+    const td1=document.createElement('td'); td1.textContent=item.title||'';
+    const td2=document.createElement('td'); td2.textContent=item.type||'';
+    const td3=document.createElement('td'); td3.textContent=item.message||'';
+    const td4=document.createElement('td'); td4.textContent=item.file||'';
+    tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('trace').textContent = r.trace || '';
+
+  const ctx1 = document.getElementById('testsOverviewChart').getContext('2d');
+  new Chart(ctx1,{type:'doughnut',data:{
+    labels:['موفق','ناموفق','اسکیپ','فلیکی'],
+    datasets:[{data:[
+      Number(t.passed||0),
+      Number(t.failed||0),
+      Number(t.skipped||0),
+      Number(t.flaky||0)
+    ]}]
+  },options:{
+    responsive:true,
+    plugins:{legend:{position:'bottom',labels:{color:'#cfe0f0'}}}
+  }});
+
+  const ctx2 = document.getElementById('failureTypesChart').getContext('2d');
+  const labels=f.map(x=>x.type||'نامشخص');
+  const data=f.map(x=>Number(x.count||0));
+  new Chart(ctx2,{type:'bar',data:{labels,datasets:[{data}]} ,options:{
+    responsive:true,
+    scales:{
+      x:{ticks:{color:'#cfe0f0'}},
+      y:{ticks:{color:'#cfe0f0'},beginAtZero:true,precision:0}
+    },
+    plugins:{legend:{display:false}}
+  }});
+})();
+</script>
+</body>
+</html>

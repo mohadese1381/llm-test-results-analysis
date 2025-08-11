@@ -9,3 +9,6 @@ pylint
 pyvis
 requests
 openai
+javalang
+tree_sitter
+tree_sitter_c_sharp

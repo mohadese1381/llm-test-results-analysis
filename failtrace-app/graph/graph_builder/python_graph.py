@@ -1,9 +1,23 @@
+# --- file: graph/python_graph.py ---
 import os
 import libcst as cst
 import networkx as nx
 from typing import List
 from libcst import parse_module
 from libcst.metadata import PositionProvider, MetadataWrapper
+
+# ✅ پوشه‌هایی که نباید وارد گراف شوند (محیط مجازی/خروجی/کش‌ها)
+_EXCLUDED_DIRS = {
+    ".venv",
+    "venv",
+    "env",
+    "site-packages",
+    "__pycache__",
+    ".tox",
+    ".pytest_cache",
+    "build",
+    "dist",
+}
 
 
 def is_test_file(tree: cst.Module) -> bool:
@@ -30,6 +44,27 @@ class FunctionCollector(cst.CSTVisitor):
         self.current_function = None
         self.is_test_file = is_test_file
 
+    # ─────────────────────────────
+    # Helpers
+    # ─────────────────────────────
+    def _resolve_internal_targets(self, callee: str) -> List[str]:
+        """
+        تلاش می‌کند کال را به نودهای داخلی پروژه مچ کند:
+        - suffix match روی شناسه‌ی نودها:  ...::callee
+        - فقط روی نوع‌های function/test اعمال می‌شود
+        """
+        if not callee:
+            return []
+        suf = f"::{callee}"
+        targets: List[str] = []
+        for nid, data in self.graph.nodes(data=True):
+            if data.get("type") in {"function", "test"} and nid.endswith(suf):
+                targets.append(nid)
+        return targets
+
+    # ─────────────────────────────
+    # Visitors
+    # ─────────────────────────────
     def visit_ClassDef(self, node: cst.ClassDef):
         self.current_class = node.name.value
 
@@ -72,28 +107,50 @@ class FunctionCollector(cst.CSTVisitor):
         if not self.current_function:
             return
 
+        # نام ساده‌ی کال را دربیاور (foo()، obj.foo() → foo)
         callee = None
         if isinstance(node.func, cst.Name):
             callee = node.func.value
         elif isinstance(node.func, cst.Attribute):
             callee = node.func.attr.value
 
-        if callee:
-            callee_id = callee
-            if not self.graph.has_node(callee_id):
-                self.graph.add_node(callee_id, type="external")
+        if not callee:
+            return
+
+        # ✅ اول تلاش برای مچ با نودهای داخلی (suffix-match)
+        internal_targets = self._resolve_internal_targets(callee)
+        if internal_targets:
+            for tgt in internal_targets:
+                if not self.graph.has_edge(self.current_function, tgt):
+                    self.graph.add_edge(self.current_function, tgt)
+            return
+
+        # ↩️ اگر چیزی پیدا نشد، مثل قبل یک نود external می‌گذاریم
+        callee_id = callee
+        if not self.graph.has_node(callee_id):
+            self.graph.add_node(callee_id, type="external")
+        if not self.graph.has_edge(self.current_function, callee_id):
             self.graph.add_edge(self.current_function, callee_id)
 
 
 def extract_python_graph(project_path: str) -> nx.DiGraph:
     graph = nx.DiGraph()
 
-    for root, _, files in os.walk(project_path):
+    # ✅ پیمایش با prune دایرکتوری‌های ناخواسته
+    for root, dirs, files in os.walk(project_path):
+        dirs[:] = [d for d in dirs if d not in _EXCLUDED_DIRS]
+
         for file in files:
             if not file.endswith(".py"):
                 continue
 
             file_path = os.path.join(root, file)
+
+            # ✅ ایمنی: اگر مسیر شامل فولدرهای ممنوعه بود، رد کن
+            norm_path = file_path.replace("\\", "/")
+            if any(f"/{ex}/" in f"/{norm_path}/" for ex in _EXCLUDED_DIRS):
+                continue
+
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     source = f.read()

@@ -1,40 +1,100 @@
 You are a senior software engineer and AI analyst. Your job is to deeply analyze failed unit tests or integration tests, trace through the critical call paths, and pinpoint root causes in the code. You will answer in STRICT JSON using the schema below, and include your step-by-step reasoning.
 
-GRAPH SUMMARY: 27 nodes, 31 edges.
+GRAPH SUMMARY: 85 nodes, 84 edges.
 
 TEST SUMMARY:
-• Total: 10
-• Executed: 2 (✅1, ❌1, ⚠️0)
+• Total: 29
+• Executed: 24 (✅19, ❌4, ⚠️1)
 • Failures detail:
-  - test_math_utils.py::TestMathUtils::test_fibonacci_sequence: MemoryError: Unable to allocate...
+  - tests/smoke/test_basic.py::test_will_fail: AssertionError: Function should return double of the value
+assert 2 == 4
+  - tests/unit/test_delayed_assert.py::test_delayed_response_with_error: AssertionError: #x1B[93m
+
+assert_expectations() called at#x1B[0m
+#x1B[4m#x1B[94m"C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:13"#x1B[0m#x1B[93m in test_delayed_response_with_error()
+
+#x1B[91m#x1B[4mFailed Expectations : 1
+#x1B[0m
+1: #x1B[91mFailed at "#x1B[0m#x1B[94m#x1B[4mC:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12#x1B[0m#x1B[91m", in test_delayed_response_with_error()
+	#x1B[1m#x1B[4mErrorMessage:#x1B[0m#x1B[91m	{"key": "value"}#x1B[0m
+    expect(response.json() == {}, response.text)
+  - tests/unit/test_mocks.py::test_mock_patching: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+  - tests/unit/test_mocks.py::test_mock_side_effect: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
 
 CRITICAL PATHS for each failed test:
 
-Test: test_math_utils.py::TestMathUtils::test_fibonacci_sequence
-Error: MemoryError: Unable to allocate...
+Test: tests/smoke/test_basic.py::test_will_fail
+Error: AssertionError: Function should return double of the value
+assert 2 == 4
 Upstream:
 Downstream:
-  • test_math_utils.py::TestMathUtils::test_fibonacci_sequence → assertEqual
-  • test_math_utils.py::TestMathUtils::test_fibonacci_sequence → assertRaises
-  • test_math_utils.py::TestMathUtils::test_fibonacci_sequence → math_utils.py::fibonacci_sequence
+  • tests/smoke/test_basic.py::test_will_fail → source/sut.py::SystemUnderTest::function
+  • tests/smoke/test_basic.py::test_will_fail → source/sut.py::SystemUnderTest::function
+  • tests/smoke/test_basic.py::test_will_fail → source/sut.py::SystemUnderTest::function
+  • tests/smoke/test_basic.py::test_will_fail
+
+Test: tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+Error: AssertionError: #x1B[93m
+
+assert_expectations() called at#x1B[0m
+#x1B[4m#x1B[94m"C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:13"#x1B[0m#x1B[93m in test_delayed_response_with_error()
+
+#x1B[91m#x1B[4mFailed Expectations : 1
+#x1B[0m
+1: #x1B[91mFailed at "#x1B[0m#x1B[94m#x1B[4mC:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12#x1B[0m#x1B[91m", in test_delayed_response_with_error()
+	#x1B[1m#x1B[4mErrorMessage:#x1B[0m#x1B[91m	{"key": "value"}#x1B[0m
+    expect(response.json() == {}, response.text)
+Upstream:
+Downstream:
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+
+Test: tests/unit/test_mocks.py::test_mock_patching
+Error: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+Upstream:
+Downstream:
+  • tests/unit/test_mocks.py::test_mock_patching
+  • tests/unit/test_mocks.py::test_mock_patching
+  • tests/unit/test_mocks.py::test_mock_patching
+
+Test: tests/unit/test_mocks.py::test_mock_side_effect
+Error: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+Upstream:
+Downstream:
+  • tests/unit/test_mocks.py::test_mock_side_effect
+  • tests/unit/test_mocks.py::test_mock_side_effect
+  • tests/unit/test_mocks.py::test_mock_side_effect
+  • tests/unit/test_mocks.py::test_mock_side_effect
+  • tests/unit/test_mocks.py::test_mock_side_effect
 
 FUNCTION SNIPPETS:
 
-math_utils.py::fibonacci_sequence (line 17):
+source/sut.py::SystemUnderTest::function (line 11):
 """
+Function that returns the double of a numeric
 
+Returns:
+    int or float depending on the input, None if None
+
+Raises:
+    TypeError if unexpected type
 """
-    def fibonacci_sequence(n):
-        if not isinstance(n, int) or n < 0:
-            raise ValueError("ورودی باید عدد صحیح غیرمنفی باشد")
-        fib = [0, 1]
-        for i in range(2, n):
-            fib.append(fib[i-1] + fib[i-2])
-        return fib[:n]
+    def function(value: Numeric|None) -> Numeric|None:
+            """Function that returns the double of a numeric
+    
+            Returns:
+                int or float depending on the input, None if None
+    
+            Raises:
+                TypeError if unexpected type
+        ...
 
 FEW-SHOT EXAMPLES:
 
 INPUT:
+[EXAMPLE — STYLE & STRUCTURE ONLY, DO NOT COPY ASSUMPTIONS]
 GRAPH SUMMARY: 152 nodes, 289 edges.
 
 TEST SUMMARY:
@@ -75,13 +135,14 @@ OUTPUT:
       "error": "ZeroDivisionError: division by zero",
       "call_path": ["math_utils.py::safe_divide", "math_utils.py::_normalize_inputs"],
       "reasoning": [
-        "safe_divide بدون بررسی b==0 مستقیم a/b انجام می‌دهد",
-        "مسیر بحرانی نشان می‌دهد normalize_inputs تضمین صفر نبودن b را ارائه نمی‌دهد"
+        "1) safe_divide بدون بررسی b==0 مستقیماً a/b را اجرا می‌کند",
+        "2) _normalize_inputs فقط None-check دارد و صفر نبودن b را تضمین نمی‌کند",
+        "3) مسیر بحرانی وقوع خطا را در safe_divide تایید می‌کند"
       ],
-      "root_cause": "عدم بررسی تقسیم بر صفر در safe_divide",
+      "root_cause": "نبود guard برای تقسیم بر صفر در safe_divide",
       "suggested_fixes": [
-        "قبل از تقسیم، اگر b==0 مقدار امن (مثلاً None یا 0) برگردان یا استثنا کنترل‌شده بده",
-        "در _normalize_inputs شرط صفر نبودن b را enforce کن"
+        "افزودن بررسی b==0 و بازگرداندن مقدار امن یا استثنای کنترل‌شده",
+        "افزودن قید b!=0 در _normalize_inputs و پوشش تستی آن"
       ]
     }
   ]

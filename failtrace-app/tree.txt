@@ -1,0 +1,150 @@
+Folder PATH listing
+Volume serial number is FCDA-0FA0
+C:.
+|   README.md
+|   requirements.txt
+|   run.py
+|   tree.txt
+|   
++---.vscode
+|       settings.json
+|       
++---analysis
+|   |   critical_path_extractor.py
+|   |   function_extractor.py
+|   |   mapper.py
+|   |   summarizer.py
+|   |   __init__.py
+|   |   
+|   \---__pycache__
+|           critical_path_extractor.cpython-312.pyc
+|           mapper.cpython-312.pyc
+|           summarizer.cpython-312.pyc
+|           __init__.cpython-312.pyc
+|           
++---cli
+|   |   main.py
+|   |   __init__.py
+|   |   
+|   \---__pycache__
+|           main.cpython-312.pyc
+|           __init__.cpython-312.pyc
+|           
++---graph
+|   |   __init__.py
+|   |   
+|   +---graph_builder
+|   |   |   base.py
+|   |   |   csharp_graph.py
+|   |   |   csharp_graph_builder.py
+|   |   |   detector.py
+|   |   |   java_graph.py
+|   |   |   java_graph_builder.py
+|   |   |   plugins.py
+|   |   |   python_graph.py
+|   |   |   python_graph_builder.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           base.cpython-312.pyc
+|   |           csharp_graph.cpython-312.pyc
+|   |           csharp_graph_builder.cpython-312.pyc
+|   |           detector.cpython-312.pyc
+|   |           java_graph.cpython-312.pyc
+|   |           java_graph_builder.cpython-312.pyc
+|   |           plugins.cpython-312.pyc
+|   |           python_graph.cpython-312.pyc
+|   |           python_graph_builder.cpython-312.pyc
+|   |           __init__.cpython-312.pyc
+|   |           
+|   +---graph_utils
+|   |   |   node_summarizer.py
+|   |   |   path_enricher.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           enrich_path.cpython-312.pyc
+|   |           graph_node_summarizer.cpython-312.pyc
+|   |           node_summarizer.cpython-312.pyc
+|   |           path_enricher.cpython-312.pyc
+|   |           __init__.cpython-312.pyc
+|   |           
+|   \---__pycache__
+|           __init__.cpython-312.pyc
+|           
++---lib
+|   +---bindings
+|   |       utils.js
+|   |       
+|   +---tom-select
+|   |       tom-select.complete.min.js
+|   |       tom-select.css
+|   |       
+|   \---vis-9.1.2
+|           vis-network.css
+|           vis-network.min.js
+|           
++---llm
+|   |   avalai_client.py
+|   |   few_shots_loader.py
+|   |   prompt_generator.py
+|   |   structured_prompt_builder.py
+|   |   __init__.py
+|   |   
+|   +---few_shots
+|   |       csharp_async_race.json
+|   |       java_nullpointer.json
+|   |       python_unit_fail.json
+|   |       
+|   \---__pycache__
+|           avalai_client.cpython-312.pyc
+|           few_shots_loader.cpython-312.pyc
+|           function_extractor.cpython-312.pyc
+|           hf_client.cpython-312.pyc
+|           preparer.cpython-312.pyc
+|           prompt_generator.cpython-312.pyc
+|           structured_prompt_builder.cpython-312.pyc
+|           summarizer.cpython-312.pyc
+|           __init__.cpython-312.pyc
+|           
++---output
+|   |   analysis_report.txt
+|   |   final_prompt.txt
+|   |   function_summaries.json
+|   |   graph.html
+|   |   llm_prompt.json
+|   |   summary.json
+|   |   
+|   \---cache
+|           graph.pkl
+|           
++---report
+|       report_template.html
+|       
++---tests
+|   |   test_main.py
+|   |   __init__.py
+|   |   
+|   \---__pycache__
+|           test_main.cpython-312.pyc
+|           __init__.cpython-312.pyc
+|           
++---utils
+|   |   file_ops.py
+|   |   logs_parser.py
+|   |   normalize.py
+|   |   report_renderer.py
+|   |   visualizer.py
+|   |   __init__.py
+|   |   
+|   \---__pycache__
+|           file_ops.cpython-312.pyc
+|           logs_parser.cpython-312.pyc
+|           normalize.cpython-312.pyc
+|           report_renderer.cpython-312.pyc
+|           visualizer.cpython-312.pyc
+|           __init__.cpython-312.pyc
+|           
+\---__pycache__
+        run.cpython-312.pyc
+        
