@@ -379,18 +379,58 @@ def _infer_lang_from_path(project_path: str) -> str:
     return "unknown"
 
 
+def _strip_params(name: str) -> str:
+    import re
+
+    return re.sub(r"(\[.*?\]|\(.*?\)|\{.*?\})$", "", name).strip()
+
+
 def _guess_targets_from_failed_tests(summary: Dict, lang: str) -> List[Tuple[str, str]]:
     out: List[Tuple[str, str]] = []
     failed = summary.get("failed_detail") or []
+
     for item in failed:
-        raw = item.get("name", "")
-        cls, meth = _split_test_qualified_name(raw)
-        if not cls or not meth:
+        raw = (item.get("name") or "").strip()
+        if not raw:
             continue
+
+        cls, meth = _split_test_qualified_name(raw)
+        meth = _strip_params(meth)
+
         if lang == "csharp":
-            out.append((f"{cls}::{meth}", f"{cls}.cs"))
+            simple_type = cls.split(".")[-1].split("+")[0] if cls else ""
+            func_name = f"{simple_type or cls}::{meth}" if meth else ""
+            file_guess = f"{simple_type or 'Unknown'}.cs"
+            if func_name and file_guess:
+                out.append((func_name, file_guess))
+
         elif lang == "java":
-            out.append((f"{cls}::{meth}", f"{cls}.java"))
+            simple_type = cls.split(".")[-1] if cls else ""
+            func_name = f"{simple_type or cls}::{meth}" if meth else ""
+            file_guess = f"{cls.replace('.', '/')}.java" if cls else ""
+            if func_name and file_guess:
+                out.append((func_name, file_guess))
+
+        elif lang == "python":
+            if "::" in raw:
+                parts = raw.split("::")
+                file_guess = parts[0].replace("\\", "/")
+                func_guess = (
+                    "::".join(_strip_params(p) for p in parts[1:])
+                    if len(parts) > 1
+                    else ""
+                )
+                if file_guess.endswith(".py") and func_guess:
+                    out.append((func_guess, file_guess))
+            else:
+                dots = raw.split(".")
+                if len(dots) >= 2:
+                    module = ".".join(dots[:-1])
+                    func = _strip_params(dots[-1])
+                    file_guess = module.replace(".", "/") + ".py"
+                    if func and file_guess.endswith(".py"):
+                        out.append((func, file_guess))
+
     return out
 
 

@@ -111,11 +111,11 @@ def run_full(args) -> None:
     logger.info("→ Building dependency graph…")
     graph = build_graph(args.project)
     visualize_graph(graph, str(out_dir / "graph.html"))
-    _save_graph(graph, out_dir)
     logger.info(f"→ Loading test logs from {args.log}…")
     logs = load_test_logs(args.log, lang)
     _log_examples(logs, lang)
     tag_graph_with_logs(graph, logs, lang)
+    _save_graph(graph, out_dir)
     logger.info("→ Summarizing test results…")
     summary = build_test_summary(graph)
     (out_dir / "summary.json").write_text(
@@ -157,6 +157,7 @@ def run_quick(args) -> None:
     if graph is None:
         logger.info("→ No cached graph found; building once and caching it…")
         graph = build_graph(args.project)
+        graph = tag_graph_with_logs(graph, logs, lang)
         _save_graph(graph, out_dir)
     logger.info(f"→ Loading test logs from {args.log}…")
     logs = load_test_logs(args.log, lang)

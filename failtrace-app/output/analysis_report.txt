@@ -1,74 +1,56 @@
-```json
 {
  "analysis": [
-  {
-   "test_name": "tests/smoke/test_basic.py::test_will_fail",
-   "error": "AssertionError: Function should return double of the value",
-   "call_path": [
-    "source/sut.py::SystemUnderTest::function"
-   ],
-   "reasoning": [
-    "1) The test expects the function to return double the input value, but the assertion `assert 2 == 4` indicates the function returned 2 instead of 4.",
-    "2) The function implementation in `source/sut.py::SystemUnderTest::function` might not correctly double the input value.",
-    "3) No explicit checks or transformations for doubling the input are visible in the provided snippet, suggesting a missing or incorrect implementation."
-   ],
-   "root_cause": "The function does not correctly implement doubling the input value.",
-   "suggested_fixes": [
-    "Ensure the function explicitly multiplies the input value by 2 before returning it.",
-    "Add a unit test to validate the function's behavior for various numeric inputs, including edge cases."
-   ]
-  },
-  {
-   "test_name": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
-   "error": "AssertionError: Failed Expectations : 1",
-   "call_path": [
-    "tests/unit/test_delayed_assert.py::test_delayed_response_with_error"
-   ],
-   "reasoning": [
-    "1) The test expects `response.json()` to return an empty dictionary `{}`, but the actual response contains `{\"key\": \"value\"}`.",
-    "2) The assertion `expect(response.json() == {}, response.text)` fails because the response content does not match the expected value.",
-    "3) The test setup or mocking of the response may not correctly simulate the expected behavior, leading to the mismatch."
-   ],
-   "root_cause": "The mocked or actual response does not match the expected empty dictionary `{}`.",
-   "suggested_fixes": [
-    "Verify the response mocking setup to ensure it returns an empty dictionary `{}` as expected.",
-    "Update the test to handle cases where the response contains unexpected data, or adjust the expectations if the response is valid."
-   ]
-  },
-  {
-   "test_name": "tests/unit/test_mocks.py::test_mock_patching",
-   "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.",
-   "call_path": [
-    "tests/unit/test_mocks.py::test_mock_patching"
-   ],
-   "reasoning": [
-    "1) The test attempts to use the `called_once` attribute on a mock object, but this attribute is not valid unless explicitly defined in the mock's spec.",
-    "2) Mock objects require a spec to define valid attributes and methods, and the absence of a spec leads to the AttributeError.",
-    "3) The test setup does not include a spec for the mock, causing the invalid attribute access."
-   ],
-   "root_cause": "The mock object lacks a spec, leading to an invalid attribute access for 'called_once'.",
-   "suggested_fixes": [
-    "Add a spec to the mock object to define valid attributes and methods, including 'called_once'.",
-    "Replace 'called_once' with a valid assertion method, such as `mock.assert_called_once()`."
-   ]
-  },
-  {
-   "test_name": "tests/unit/test_mocks.py::test_mock_side_effect",
-   "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.",
-   "call_path": [
-    "tests/unit/test_mocks.py::test_mock_side_effect"
-   ],
-   "reasoning": [
-    "1) Similar to `test_mock_patching`, the test uses the invalid 'called_once' attribute on a mock object.",
-    "2) Mock objects require a spec to define valid attributes and methods, and the absence of a spec leads to the AttributeError.",
-    "3) The test setup does not include a spec for the mock, causing the invalid attribute access."
-   ],
-   "root_cause": "The mock object lacks a spec, leading to an invalid attribute access for 'called_once'.",
-   "suggested_fixes": [
-    "Add a spec to the mock object to define valid attributes and methods, including 'called_once'.",
-    "Replace 'called_once' with a valid assertion method, such as `mock.assert_called_once()`."
-   ]
-  }
+ {
+ "test_name": "tests/smoke/test_basic.py::test_will_fail",
+ "error": "AssertionError: Function should return double of the value\nassert 2 == 4",
+ "call_path": ["tests/smoke/test_basic.py::test_will_fail", "source/sut.py::SystemUnderTest::function"],
+ "locus": {
+ "files": ["tests/smoke/test_basic.py", "source/sut.py"],
+ "functions": ["source/sut.py::SystemUnderTest::function"]
+ },
+ "root_cause": "The function in SystemUnderTest::function does not correctly double the input value.",
+ "severity": "high",
+ "suggested_fixes": ["Ensure the function correctly doubles the input value and returns it.", "Add test cases to validate the doubling logic for various inputs."],
+ "rationale": ["Error message indicates incorrect doubling logic.", "Critical path points to SystemUnderTest::function.", "Test explicitly checks doubling behavior."]
+ },
+ {
+ "test_name": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
+ "error": "AssertionError: Failed Expectations : 1\nexpect(response.json() == {}, response.text)",
+ "call_path": ["tests/unit/test_delayed_assert.py::test_delayed_response_with_error"],
+ "locus": {
+ "files": ["tests/unit/test_delayed_assert.py"],
+ "functions": ["tests/unit/test_delayed_assert.py::test_delayed_response_with_error"]
+ },
+ "root_cause": "The response JSON does not match the expected empty dictionary.",
+ "severity": "medium",
+ "suggested_fixes": ["Verify the API response structure and ensure it matches the expected schema.", "Update the test to handle non-empty responses if applicable."],
+ "rationale": ["Error message highlights mismatch in response JSON.", "Test directly asserts response.json() == {}.", "Critical path confirms issue in test_delayed_response_with_error."]
+ },
+ {
+ "test_name": "tests/unit/test_mocks.py::test_mock_patching",
+ "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.",
+ "call_path": ["tests/unit/test_mocks.py::test_mock_patching"],
+ "locus": {
+ "files": ["tests/unit/test_mocks.py"],
+ "functions": ["tests/unit/test_mocks.py::test_mock_patching"]
+ },
+ "root_cause": "The mock object lacks the 'called_once' attribute, indicating improper mock configuration.",
+ "severity": "medium",
+ "suggested_fixes": ["Use a spec or configure the mock to include the 'called_once' attribute.", "Replace 'called_once' with a valid mock assertion method like assert_called_once()."],
+ "rationale": ["Error explicitly states 'called_once' is not valid.", "Test relies on mock configuration for assertions.", "Critical path confirms issue in test_mock_patching."]
+ },
+ {
+ "test_name": "tests/unit/test_mocks.py::test_mock_side_effect",
+ "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.",
+ "call_path": ["tests/unit/test_mocks.py::test_mock_side_effect"],
+ "locus": {
+ "files": ["tests/unit/test_mocks.py"],
+ "functions": ["tests/unit/test_mocks.py::test_mock_side_effect"]
+ },
+ "root_cause": "The mock object lacks the 'called_once' attribute, indicating improper mock configuration.",
+ "severity": "medium",
+ "suggested_fixes": ["Use a spec or configure the mock to include the 'called_once' attribute.", "Replace 'called_once' with a valid mock assertion method like assert_called_once()."],
+ "rationale": ["Error explicitly states 'called_once' is not valid.", "Test relies on mock configuration for assertions.", "Critical path confirms issue in test_mock_side_effect."]
+ }
  ]
 }
-```

@@ -1,21 +1,55 @@
+from __future__ import annotations
 import json
-import os
-from typing import Dict
+from pathlib import Path
+from typing import Dict, Optional
+import pickle
+import networkx as nx
 
 from graph.graph_builder import build_graph
-from utils.file_ops import load_json
-from analysis.mapper import load_test_logs, tag_graph_with_logs
 from analysis.summarizer import build_test_summary
 from analysis.critical_path_extractor import find_critical_paths
+from utils.normalize import normalize_test_name
 
 
-def get_error_message(summary: Dict, test_name: str) -> str:
-    """
-    جستجو در لیست تست‌های شکست‌خورده برای یافتن پیام خطا
-    """
-    for failed in summary.get("failed_detail", []):
-        if failed["name"] == test_name:
-            return failed.get("error", "")
+class PromptBuildError(RuntimeError):
+    pass
+
+
+def _read_json(p: Path) -> dict:
+    if not p.is_file():
+        return {}
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+def _load_cached_graph(out_dir: Path) -> Optional[nx.DiGraph]:
+    p = out_dir / "cache" / "graph.pkl"
+    if not p.is_file():
+        return None
+    with open(p, "rb") as f:
+        return pickle.load(f)
+
+
+def _ensure_graph(project_path: str, out_dir: Path) -> nx.DiGraph:
+    g = _load_cached_graph(out_dir)
+    if g is None:
+        g = build_graph(project_path)
+    return g
+
+
+def _apply_failed_from_summary(graph: nx.DiGraph, summary: Dict, lang: str) -> None:
+    failed = [it.get("name", "") for it in summary.get("failed_detail", []) or []]
+    norm = {normalize_test_name(n, lang) for n in failed if n}
+    for nid, data in graph.nodes(data=True):
+        if data.get("is_test"):
+            tail = nid.split("::", 1)[-1]
+            if tail in norm or any(tail.endswith(x) for x in norm):
+                graph.nodes[nid]["test_status"] = "failed"
+
+
+def _err_msg(summary: Dict, test_name: str) -> str:
+    for f in summary.get("failed_detail", []) or []:
+        if f.get("name") == test_name:
+            return f.get("error") or ""
     return ""
 
 
@@ -25,31 +59,19 @@ def build_structured_prompt(
     lang: str,
     output_path: str = "output/llm_prompt.json",
 ) -> Dict:
-    """
-    ساخت یک prompt ساختاریافته شامل:
-    - اطلاعات پروژه
-    - خلاصه تست‌ها
-    - مسیرهای بحرانی تست‌های شکست‌خورده
+    out_dir = Path(output_path).resolve().parent
+    graph = _ensure_graph(project_path, out_dir)
 
-    پارامتر `lang` اضافه شده تا در بارگذاری و برچسب‌گذاری لاگ‌ها استفاده شود.
-    """
+    summary = _read_json(out_dir / "summary.json")
+    if not summary:
+        summary = build_test_summary(graph)
 
-    # 1. ساخت گراف پروژه
-    graph = build_graph(project_path)
+    _apply_failed_from_summary(graph, summary, lang)
+    critical = find_critical_paths(graph)
 
-    # 2. بارگذاری و تگ‌گذاری لاگ‌ها با توجه به زبان
-    logs = load_test_logs(log_path, lang)
-    graph = tag_graph_with_logs(graph, logs, lang)
-
-    # 3. خلاصه تست‌ها و مسیرهای بحرانی
-    summary = build_test_summary(graph)
-    critical_paths = find_critical_paths(graph)
-
-    # 4. ساخت ساختار نهایی prompt
-    structured_prompt: Dict = {
+    payload: Dict = {
         "meta": {
             "project_path": project_path,
-            "log_path": log_path,
             "language": lang,
             "graph": {
                 "nodes": graph.number_of_nodes(),
@@ -60,17 +82,15 @@ def build_structured_prompt(
         "critical_paths": {},
     }
 
-    # 5. افزودن مسیرهای بحرانی به خروجی
-    for test_name, paths in critical_paths.items():
-        structured_prompt["critical_paths"][test_name] = {
-            "error": get_error_message(summary, test_name),
+    for test_name, paths in critical.items():
+        payload["critical_paths"][test_name] = {
+            "error": _err_msg(summary, test_name),
             "upstream": paths.get("upstream", []),
             "downstream": paths.get("downstream", []),
         }
 
-    # 6. ذخیره فایل نهایی
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(structured_prompt, f, indent=2, ensure_ascii=False)
-
-    return structured_prompt
+    out_dir.mkdir(parents=True, exist_ok=True)
+    Path(output_path).write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    return payload

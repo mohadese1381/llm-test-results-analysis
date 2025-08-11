@@ -1,14 +1,18 @@
-You are a senior software engineer and AI analyst. Your job is to deeply analyze failed unit tests or integration tests, trace through the critical call paths, and pinpoint root causes in the code. You will answer in STRICT JSON using the schema below, and include your step-by-step reasoning.
-
-GRAPH SUMMARY: 85 nodes, 84 edges.
+You are an expert software QA/SE assistant. Analyze failed tests across Python/Java/C# projects, using the provided test summary, critical call paths, and code snippets. Perform internal step-by-step reasoning but DO NOT reveal chain-of-thought. Output only the final JSON that follows the required schema.Explain root causes in detail, suggest fixes, and provide evidence-based rationale.
+Your tasks:
+1) Identify which tests failed and what the exact error messages are.
+2) Map failures to project areas using the provided critical paths.
+3) Produce a concise root-cause analysis per failed test.
+4) Propose concrete fixes (code-level and/or config/integration).
+5) If signals suggest flaky/environmental issues, state it explicitly.
+Do not include chain-of-thought or step-by-step reasoning in the output; only final JSON.
 
 TEST SUMMARY:
-• Total: 29
-• Executed: 24 (✅19, ❌4, ⚠️1)
-• Failures detail:
-  - tests/smoke/test_basic.py::test_will_fail: AssertionError: Function should return double of the value
+- Total: 29 | Passed: 19 | Failed: 4 | Skipped: 1
+- Failures:
+  • tests/smoke/test_basic.py::test_will_fail: AssertionError: Function should return double of the value
 assert 2 == 4
-  - tests/unit/test_delayed_assert.py::test_delayed_response_with_error: AssertionError: #x1B[93m
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error: AssertionError: #x1B[93m
 
 assert_expectations() called at#x1B[0m
 #x1B[4m#x1B[94m"C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:13"#x1B[0m#x1B[93m in test_delayed_response_with_error()
@@ -18,15 +22,14 @@ assert_expectations() called at#x1B[0m
 1: #x1B[91mFailed at "#x1B[0m#x1B[94m#x1B[4mC:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12#x1B[0m#x1B[91m", in test_delayed_response_with_error()
 	#x1B[1m#x1B[4mErrorMessage:#x1B[0m#x1B[91m	{"key": "value"}#x1B[0m
     expect(response.json() == {}, response.text)
-  - tests/unit/test_mocks.py::test_mock_patching: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
-  - tests/unit/test_mocks.py::test_mock_side_effect: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+  • tests/unit/test_mocks.py::test_mock_patching: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+  • tests/unit/test_mocks.py::test_mock_side_effect: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
 
-CRITICAL PATHS for each failed test:
+CRITICAL PATHS:
 
 Test: tests/smoke/test_basic.py::test_will_fail
 Error: AssertionError: Function should return double of the value
 assert 2 == 4
-Upstream:
 Downstream:
   • tests/smoke/test_basic.py::test_will_fail → source/sut.py::SystemUnderTest::function
   • tests/smoke/test_basic.py::test_will_fail → source/sut.py::SystemUnderTest::function
@@ -44,7 +47,6 @@ assert_expectations() called at#x1B[0m
 1: #x1B[91mFailed at "#x1B[0m#x1B[94m#x1B[4mC:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12#x1B[0m#x1B[91m", in test_delayed_response_with_error()
 	#x1B[1m#x1B[4mErrorMessage:#x1B[0m#x1B[91m	{"key": "value"}#x1B[0m
     expect(response.json() == {}, response.text)
-Upstream:
 Downstream:
   • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
   • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
@@ -53,7 +55,6 @@ Downstream:
 
 Test: tests/unit/test_mocks.py::test_mock_patching
 Error: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
-Upstream:
 Downstream:
   • tests/unit/test_mocks.py::test_mock_patching
   • tests/unit/test_mocks.py::test_mock_patching
@@ -61,7 +62,6 @@ Downstream:
 
 Test: tests/unit/test_mocks.py::test_mock_side_effect
 Error: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
-Upstream:
 Downstream:
   • tests/unit/test_mocks.py::test_mock_side_effect
   • tests/unit/test_mocks.py::test_mock_side_effect
@@ -69,7 +69,7 @@ Downstream:
   • tests/unit/test_mocks.py::test_mock_side_effect
   • tests/unit/test_mocks.py::test_mock_side_effect
 
-FUNCTION SNIPPETS:
+FUNCTION SNIPPETS (trimmed):
 
 source/sut.py::SystemUnderTest::function (line 11):
 """
@@ -89,9 +89,11 @@ Raises:
     
             Raises:
                 TypeError if unexpected type
+    
+            """
         ...
 
-FEW-SHOT EXAMPLES:
+FEW-SHOT EXAMPLES (style only):
 
 INPUT:
 [EXAMPLE — STYLE & STRUCTURE ONLY, DO NOT COPY ASSUMPTIONS]
@@ -148,28 +150,38 @@ OUTPUT:
   ]
 }
 
-Now produce your analysis as JSON ONLY, strictly following this schema:
-```json
+RESPONSE FORMAT:
+Return JSON only. Do not add commentary, markdown fences or chain-of-thought. Keep `rationale` to ≤3 short bullets.
+Schema:
 {
   "analysis": [
     {
       "test_name": "<string>",
       "error": "<string>",
       "call_path": [
-        "<func1>",
+        "<node_1>",
         "..."
       ],
-      "reasoning": [
-        "<step 1 chain-of-thought>",
-        "..."
-      ],
-      "root_cause": "<one-sentence summary>",
+      "locus": {
+        "files": [
+          "<relpath>",
+          "..."
+        ],
+        "functions": [
+          "<file::Class::func>",
+          "..."
+        ]
+      },
+      "root_cause": "<concise single sentence>",
+      "severity": "<low|medium|high>",
       "suggested_fixes": [
-        "<fix 1>",
-        "<fix 2>"
+        "<actionable fix 1>",
+        "<actionable fix 2>"
+      ],
+      "rationale": [
+        "<short high-level evidence, no CoT>",
+        "..."
       ]
     }
   ]
 }
-```
-Include numbered `reasoning` steps to expose your chain-of-thought.
