@@ -8,8 +8,12 @@ class PromptGenerator:
         "You are an expert software QA/SE assistant. Analyze failed tests across Python/Java/C# projects, "
         "using the provided test summary, critical call paths, and code snippets. "
         "Perform internal step-by-step reasoning but DO NOT reveal chain-of-thought. "
-        "Output only the final JSON that follows the required schema."
-        "Explain root causes in detail, suggest fixes, and provide evidence-based rationale."
+        "Output only the final JSON that follows the required schema. "
+        "Explain root causes in detail, suggest fixes, and provide evidence-based rationale. "
+        "For each failed test, you MUST provide a concise `failure_type`. "
+        "Prefer the simple exception name without package/namespace (e.g., AssertionError, AttributeError, "
+        "NullPointerException). If no clear exception, choose a short category like: Timeout, Network, "
+        "Configuration, Mocking, DataMismatch, Resource, Flaky, Other."
     )
 
     _OUTPUT_SCHEMA = {
@@ -22,7 +26,8 @@ class PromptGenerator:
                     "files": ["<relpath>", "..."],
                     "functions": ["<file::Class::func>", "..."],
                 },
-                "root_cause": "<concise single sentence>",
+                "failure_type": "<short normalized type, e.g. AssertionError | NullPointerException | Timeout | Other>",
+                "root_cause": "<precise details in at least one sentence to 3 sentences at most>",
                 "severity": "<low|medium|high>",
                 "suggested_fixes": ["<actionable fix 1>", "<actionable fix 2>"],
                 "rationale": ["<short high-level evidence, no CoT>", "..."],
@@ -66,6 +71,8 @@ class PromptGenerator:
             "3) Produce a concise root-cause analysis per failed test.\n"
             "4) Propose concrete fixes (code-level and/or config/integration).\n"
             "5) If signals suggest flaky/environmental issues, state it explicitly.\n"
+            "6) Set `failure_type` to a SHORT normalized label (exception simple name or category). "
+            "Examples: AssertionError, AttributeError, NullPointerException, Timeout, Network, Configuration, Mocking, Other.\n"
             "Do not include chain-of-thought or step-by-step reasoning in the output; only final JSON."
         )
 

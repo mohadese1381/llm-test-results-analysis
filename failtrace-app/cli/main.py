@@ -92,7 +92,6 @@ def _emit_report(args, out_dir: Path) -> None:
             project_path=args.project,
             out_dir=str(out_dir),
             template_path=str(template_path),
-            model_name=args.model,
         )
         logger.info(f"✅ Report generated: {final}")
         if getattr(args, "open_report", False):
@@ -157,6 +156,7 @@ def run_quick(args) -> None:
     if graph is None:
         logger.info("→ No cached graph found; building once and caching it…")
         graph = build_graph(args.project)
+        logs = load_test_logs(args.log, lang)
         graph = tag_graph_with_logs(graph, logs, lang)
         _save_graph(graph, out_dir)
     logger.info(f"→ Loading test logs from {args.log}…")

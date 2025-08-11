@@ -1,56 +1,44 @@
 {
  "analysis": [
  {
- "test_name": "tests/smoke/test_basic.py::test_will_fail",
- "error": "AssertionError: Function should return double of the value\nassert 2 == 4",
- "call_path": ["tests/smoke/test_basic.py::test_will_fail", "source/sut.py::SystemUnderTest::function"],
+ "test_name": "<global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent",
+ "error": "Expectation has property AnyoneCanAddSelf that the other object does not have. Expected property result.Data.ColorId to be <null>, but found \"\". Expected property result.Data.Description to be <null>, but found \"\". Expected property result.Data.Summary to be <null>, but found \"\".",
+ "call_path": [
+ "<global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent",
+ "<global>::Application/IServices/IEventService.cs::IEventService::GetAsync",
+ "<global>::Application/Services/EventService.cs::EventService::GetAsync",
+ "<global>::Application/Infrastructure.Abstractions/Integration.Abstractions/IGoogleEventProvider.cs::IGoogleEventProvider::GetAsync",
+ "<global>::infrastructure/Integrations/GoogleEventProvider.cs::GoogleEventProvider::GetAsync"
+ ],
  "locus": {
- "files": ["tests/smoke/test_basic.py", "source/sut.py"],
- "functions": ["source/sut.py::SystemUnderTest::function"]
+ "files": [
+ "Application.Tests/ServiceTests/EventServiceTests.cs",
+ "Application/IServices/IEventService.cs",
+ "Application/Services/EventService.cs",
+ "Application/Infrastructure.Abstractions/Integration.Abstractions/IGoogleEventProvider.cs",
+ "infrastructure/Integrations/GoogleEventProvider.cs"
+ ],
+ "functions": [
+ "Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent",
+ "Application/IServices/IEventService.cs::IEventService::GetAsync",
+ "Application/Services/EventService.cs::EventService::GetAsync",
+ "Application/Infrastructure.Abstractions/Integration.Abstractions/IGoogleEventProvider.cs::IGoogleEventProvider::GetAsync",
+ "infrastructure/Integrations/GoogleEventProvider.cs::GoogleEventProvider::GetAsync"
+ ]
  },
- "root_cause": "The function in SystemUnderTest::function does not correctly double the input value.",
- "severity": "high",
- "suggested_fixes": ["Ensure the function correctly doubles the input value and returns it.", "Add test cases to validate the doubling logic for various inputs."],
- "rationale": ["Error message indicates incorrect doubling logic.", "Critical path points to SystemUnderTest::function.", "Test explicitly checks doubling behavior."]
- },
- {
- "test_name": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
- "error": "AssertionError: Failed Expectations : 1\nexpect(response.json() == {}, response.text)",
- "call_path": ["tests/unit/test_delayed_assert.py::test_delayed_response_with_error"],
- "locus": {
- "files": ["tests/unit/test_delayed_assert.py"],
- "functions": ["tests/unit/test_delayed_assert.py::test_delayed_response_with_error"]
- },
- "root_cause": "The response JSON does not match the expected empty dictionary.",
+ "failure_type": "DataMismatch",
+ "root_cause": "The test expects properties in the EventResponse object to be null or absent, but the actual response contains non-null values and additional properties, likely due to mismatched serialization or incorrect mapping in GoogleEventProvider::GetAsync.",
  "severity": "medium",
- "suggested_fixes": ["Verify the API response structure and ensure it matches the expected schema.", "Update the test to handle non-empty responses if applicable."],
- "rationale": ["Error message highlights mismatch in response JSON.", "Test directly asserts response.json() == {}.", "Critical path confirms issue in test_delayed_response_with_error."]
- },
- {
- "test_name": "tests/unit/test_mocks.py::test_mock_patching",
- "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.",
- "call_path": ["tests/unit/test_mocks.py::test_mock_patching"],
- "locus": {
- "files": ["tests/unit/test_mocks.py"],
- "functions": ["tests/unit/test_mocks.py::test_mock_patching"]
- },
- "root_cause": "The mock object lacks the 'called_once' attribute, indicating improper mock configuration.",
- "severity": "medium",
- "suggested_fixes": ["Use a spec or configure the mock to include the 'called_once' attribute.", "Replace 'called_once' with a valid mock assertion method like assert_called_once()."],
- "rationale": ["Error explicitly states 'called_once' is not valid.", "Test relies on mock configuration for assertions.", "Critical path confirms issue in test_mock_patching."]
- },
- {
- "test_name": "tests/unit/test_mocks.py::test_mock_side_effect",
- "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.",
- "call_path": ["tests/unit/test_mocks.py::test_mock_side_effect"],
- "locus": {
- "files": ["tests/unit/test_mocks.py"],
- "functions": ["tests/unit/test_mocks.py::test_mock_side_effect"]
- },
- "root_cause": "The mock object lacks the 'called_once' attribute, indicating improper mock configuration.",
- "severity": "medium",
- "suggested_fixes": ["Use a spec or configure the mock to include the 'called_once' attribute.", "Replace 'called_once' with a valid mock assertion method like assert_called_once()."],
- "rationale": ["Error explicitly states 'called_once' is not valid.", "Test relies on mock configuration for assertions.", "Critical path confirms issue in test_mock_side_effect."]
+ "suggested_fixes": [
+ "Ensure the mapping logic in GoogleEventProvider::GetAsync aligns with the expected EventResponse schema.",
+ "Update test expectations to match the actual schema if the additional properties are valid.",
+ "Add validation in EventService::GetAsync to enforce the expected schema before returning the response."
+ ],
+ "rationale": [
+ "Mismatch between expected and actual properties in EventResponse.",
+ "GoogleEventProvider::GetAsync directly fetches event data without schema validation.",
+ "Test configuration enforces strict property matching, exposing discrepancies."
+ ]
  }
  ]
 }

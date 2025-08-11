@@ -1,17 +1,17 @@
-# utils/report_renderer.py
 from __future__ import annotations
 from pathlib import Path
 from datetime import datetime
 import json
 from collections import Counter
 from typing import Dict, List, Tuple
+import re
 
 
 class ReportBuildError(RuntimeError):
     pass
 
 
-# ------------------------- IO & Parsing -------------------------
+# ---------- IO & parsing ----------
 
 
 def _read_json(p: Path) -> dict:
@@ -53,86 +53,79 @@ def _load_llm_analysis(out_dir: Path) -> dict:
     return _extract_first_json_block(raw) or {}
 
 
-# ------------------------- Aggregations (charts/metrics) -------------------------
+# ---------- Charts / metrics ----------
 
 
 def _build_tests_overview(summary: dict) -> dict:
     return {
-        "passed": summary.get("passed_tests", 0),
-        "failed": summary.get("failed_tests", 0),
-        "skipped": summary.get("skipped_tests", 0),
-        "flaky": summary.get("flaky_tests", 0),
+        "passed": int(summary.get("passed_tests", 0) or 0),
+        "failed": int(summary.get("failed_tests", 0) or 0),
+        "skipped": int(summary.get("skipped_tests", 0) or 0),
     }
 
 
 def _failure_types_from_summary(summary: dict) -> List[dict]:
-    types = [f.get("type") or "Unknown" for f in summary.get("failed_detail", []) or []]
+    types = [f.get("type") or "Unknown" for f in (summary.get("failed_detail") or [])]
     counts = Counter(types)
-    return [
-        {"type": t, "count": c}
-        for t, c in sorted(counts.items(), key=lambda x: x[1], reverse=True)
-    ]
+    return [{"type": t, "count": c} for t, c in counts.most_common()]
+
+
+# --- NEW: normalize LLM-provided or derived type
+def _norm_failure_type(s: str) -> str:
+    if not s:
+        return ""
+    s = s.strip()
+    # strip package/namespace
+    if "." in s:
+        s = s.split(".")[-1]
+    # map common aliases
+    aliases = {
+        "AssertionFailedError": "AssertionError",
+        "ComparisonFailure": "AssertionError",
+        "TimeoutException": "Timeout",
+        "SocketTimeoutException": "Timeout",
+        "RequestTimeout": "Timeout",
+        "ConnectException": "Network",
+        "ConnectionError": "Network",
+        "HTTPError": "Network",
+        "ConfigError": "Configuration",
+        "ConfigurationError": "Configuration",
+    }
+    return aliases.get(s, s)
 
 
 def _failure_types_from_llm(llm: dict) -> List[dict]:
+    """
+    Prefer explicit `failure_type` per item; if missing, derive from error head.
+    """
     if not isinstance(llm, dict) or "analysis" not in llm:
         return []
-    types: List[str] = []
-    for it in llm.get("analysis", []) or []:
-        err = (it or {}).get("error") or ""
-        t = err.split(":")[0].strip() if ":" in err else err.strip()
-        if t:
-            types.append(t)
-    counts = Counter(types)
-    return [
-        {"type": t, "count": c}
-        for t, c in sorted(counts.items(), key=lambda x: x[1], reverse=True)
-    ]
-
-
-def _coverage_bars(summary: dict) -> dict:
-    return {
-        "lines": float(summary.get("coverage_lines", 0) or 0),
-        "branches": float(summary.get("coverage_branches", 0) or 0),
-    }
-
-
-def _hotspots_from_llm(llm: dict) -> dict:
-    files = Counter()
-    funcs = Counter()
-    if isinstance(llm, dict):
-        for it in llm.get("analysis", []) or []:
-            loc = (it or {}).get("locus") or {}
-            for f in loc.get("files", []) or []:
-                if f:
-                    files[f] += 1
-            for fn in loc.get("functions", []) or []:
-                if fn:
-                    funcs[fn] += 1
-    top_files = [{"id": k, "count": v} for k, v in files.most_common(10)]
-    top_funcs = [{"id": k, "count": v} for k, v in funcs.most_common(10)]
-    return {"files": top_files, "functions": top_funcs}
+    bucket: Counter[str] = Counter()
+    for it in llm.get("analysis") or []:
+        ft = _norm_failure_type((it or {}).get("failure_type") or "")
+        if not ft:
+            err = (it or {}).get("error") or ""
+            head = err.split(":", 1)[0].strip() if ":" in err else err.strip()
+            ft = _norm_failure_type(head)
+        if not ft:
+            ft = "Other"
+        bucket[ft] += 1
+    return [{"type": t, "count": c} for t, c in bucket.most_common()]
 
 
 def _build_charts_data(summary: dict, llm: dict) -> dict:
     ft_llm = _failure_types_from_llm(llm)
     ft_sum = _failure_types_from_summary(summary)
-    failure_types = ft_llm or ft_sum
     return {
         "testsOverview": _build_tests_overview(summary),
-        "failureTypes": failure_types,
-        "coverageBars": _coverage_bars(summary),
+        "failureTypes": ft_llm or ft_sum,
     }
 
 
-# ------------------------- Mapping (locations) -------------------------
+# ---------- Locations (file:line) ----------
 
 
 def _line_lookup(funcs_json: dict) -> Dict[str, int]:
-    """
-    Build a lookup: "<relpath>::<Class>::<func>" -> line
-    (function_summaries.json ساختار)
-    """
     lines: Dict[str, int] = {}
     for k, v in (funcs_json or {}).items():
         try:
@@ -143,32 +136,23 @@ def _line_lookup(funcs_json: dict) -> Dict[str, int]:
 
 
 def _locations_from_locus(locus: dict, lines_map: Dict[str, int]) -> List[str]:
-    """
-    Resolve precise locations in "file:line" form.
-    Priority:
-      1) locus.functions → file::Class::func → (file, line) via function_summaries
-      2) fallback to locus.files
-    """
     locs: List[str] = []
     if not isinstance(locus, dict):
         return locs
 
-    # Prefer function-level precision
     for fn in locus.get("functions", []) or []:
-        ln = lines_map.get(fn, 0)
+        ln = int(lines_map.get(fn, 0) or 0)
         file_part = fn.split("::", 1)[0] if "::" in fn else ""
         if file_part and ln:
             locs.append(f"{file_part}:{ln}")
         elif file_part:
             locs.append(file_part)
 
-    # Fallback to files
     if not locs:
         for f in locus.get("files", []) or []:
             if f:
                 locs.append(f)
 
-    # Deduplicate preserving order
     seen = set()
     uniq: List[str] = []
     for s in locs:
@@ -178,82 +162,115 @@ def _locations_from_locus(locus: dict, lines_map: Dict[str, int]) -> List[str]:
     return uniq
 
 
-# ------------------------- Insights, Risks, Failures table -------------------------
+# ---------- Insights / Risks / Failures ----------
+
+
+def _normalize_cause(txt: str) -> str:
+    if not txt:
+        return ""
+    s = txt.strip().lower()
+    s = re.sub(r"\s+", " ", s)
+    s = re.sub(r"[\.!]+$", "", s)
+    return s
 
 
 def _insights_and_risks_from_llm(
     llm: dict, failed_count: int
-) -> Tuple[List[dict], List[dict], str]:
+) -> Tuple[List[dict], List[dict]]:
     insights: List[dict] = []
     risks: List[dict] = []
-    rationales: List[str] = []
 
-    if isinstance(llm, dict) and "analysis" in llm:
-        for item in llm["analysis"]:
-            tn = item.get("test_name", "")
-            rc = item.get("root_cause", "")
-            sev = (item.get("severity") or "").lower().strip()
+    if isinstance(llm, dict) and "analysis" in llm and llm["analysis"]:
+        items: List[dict] = llm["analysis"]
 
-            if tn or rc:
-                title = f"تست: {tn}" if tn else "تحلیل شکست"
-                detail = f"ریشه مشکل: {rc}" if rc else ""
-                if sev:
-                    detail = f"[شدت: {sev}] {detail}".strip()
-                insights.append({"title": title, "detail": detail})
+        # group by normalized root cause (fallback: error head)
+        groups: dict[str, dict] = {}
+        for it in items:
+            rc_raw = (it.get("root_cause") or "").strip()
+            key = _normalize_cause(rc_raw)
+            if not key:
+                err = (it.get("error") or "").strip()
+                key = _normalize_cause(err.split(":", 1)[0] if ":" in err else err)
+            if key not in groups:
+                groups[key] = {
+                    "title": rc_raw or (it.get("error") or "Unspecified cause"),
+                    "tests": [],
+                    "files": Counter(),
+                    "funcs": Counter(),
+                }
 
-            if sev in {"high", "medium"}:
+            g = groups[key]
+            tn = (it.get("test_name") or "").strip()
+            if tn:
+                g["tests"].append(tn)
+            locus = it.get("locus") or {}
+            for f in locus.get("files", []) or []:
+                if f:
+                    g["files"][f] += 1
+            for fn in locus.get("functions", []) or []:
+                if fn:
+                    g["funcs"][fn] += 1
+
+        # materialize insights
+        def _top3(c: Counter) -> List[str]:
+            return [k for k, _ in c.most_common(3)]
+
+        ordered = sorted(groups.values(), key=lambda g: len(g["tests"]), reverse=True)
+        for g in ordered:
+            locs = _top3(g["funcs"]) or _top3(g["files"])
+            loc_str = ", ".join(locs) if locs else "—"
+            insights.append(
+                {
+                    "title": g["title"],
+                    "detail": f"{len(g['tests'])} failing test(s) • key locations: {loc_str}",
+                }
+            )
+
+        # aggregate risks by severity only
+        sev_counts: Counter = Counter(
+            (it.get("severity") or "").strip().lower()
+            for it in items
+            if (it.get("severity") or "").strip().lower() in {"high", "medium", "low"}
+        )
+        for sev in ("high", "medium", "low"):
+            if sev_counts.get(sev, 0):
                 risks.append(
                     {
                         "level": sev,
-                        "title": "ریسک شکست در تست‌ها",
-                        "action": "رفع سریع ریشه‌ها و افزودن تست پوششی",
+                        "title": f"{sev_counts[sev]} failing test(s)",
+                        "action": "Triage owners, fix root causes, add/adjust coverage",
                     }
                 )
+        return insights, risks
 
-            r = item.get("rationale")
-            if isinstance(r, list):
-                rationales.extend([str(x).strip() for x in r if str(x).strip()])
-
-    elif failed_count > 0:
+    # fallback when no llm analysis
+    if failed_count > 0:
         insights.append(
-            {"title": "نیاز به رسیدگی", "detail": f"{failed_count} تست شکست خورد."}
+            {"title": "Failures detected", "detail": f"{failed_count} failing test(s)."}
         )
         risks.append(
             {
                 "level": "medium",
-                "title": "ریسک انتشار متوسط",
-                "action": "اصلاح تست‌های شکست‌خورده",
+                "title": "Pipeline quality risk",
+                "action": "Investigate and fix failures",
             }
         )
     else:
-        insights.append({"title": "کیفیت مطلوب", "detail": "هیچ شکست ثبت نشده است."})
-
-    trace = " | ".join(rationales[:10])
-    return insights, risks, trace
+        insights.append({"title": "All clear", "detail": "No failures in this run."})
+    return insights, risks
 
 
 def _failures_table(summary: dict, llm: dict, funcs: dict) -> List[dict]:
-    """
-    شکل ردیف‌ها برای UI:
-      - title (نام تست)
-      - root_cause
-      - location (file:line)
-      - message (error)
-      - suggested_fixes (list)
-      - severity, functions, file, link (برای استفاده‌های آتی)
-    """
-    tbl: List[dict] = []
+    rows: List[dict] = []
     lines_map = _line_lookup(funcs)
 
-    # Prefer LLM analysis if present
     if isinstance(llm, dict) and "analysis" in llm and llm["analysis"]:
         for it in llm["analysis"]:
             locus = it.get("locus") or {}
             files = locus.get("files", []) or []
             functions = locus.get("functions", []) or []
             locations = _locations_from_locus(locus, lines_map)
-
-            tbl.append(
+            rows.append(
                 {
                     "id": it.get("test_name") or "",
                     "title": it.get("test_name") or "",
@@ -265,14 +282,13 @@ def _failures_table(summary: dict, llm: dict, funcs: dict) -> List[dict]:
                     "location": ", ".join(locations) if locations else "",
                     "functions": functions,
                     "suggested_fixes": it.get("suggested_fixes") or [],
-                    "link": "",
                 }
             )
-        return tbl
+        return rows
 
-    # Fallback to raw summary (no LLM output)
+    # Fallback: summary only
     for f in summary.get("failed_detail", []) or []:
-        tbl.append(
+        rows.append(
             {
                 "id": f.get("id") or f.get("name") or "",
                 "title": f.get("name") or "",
@@ -280,20 +296,19 @@ def _failures_table(summary: dict, llm: dict, funcs: dict) -> List[dict]:
                 "message": f.get("error") or "",
                 "file": f.get("file") or "",
                 "location": f.get("file") or "",
-                "link": f.get("link") or "",
                 "root_cause": "",
                 "severity": "",
                 "functions": [],
                 "suggested_fixes": [],
             }
         )
-    return tbl
+    return rows
 
 
-# ------------------------- Report assembly -------------------------
+# ---------- Report assembly ----------
 
 
-def _build_report_json(project_path: Path, out_dir: Path, model_name: str) -> dict:
+def _build_report_json(project_path: Path, out_dir: Path) -> dict:
     summary = _read_json(out_dir / "summary.json")
     prompt = _read_json(out_dir / "llm_prompt.json")
     funcs = _read_json(out_dir / "function_summaries.json")
@@ -303,76 +318,54 @@ def _build_report_json(project_path: Path, out_dir: Path, model_name: str) -> di
     proj_name = (Path(meta.get("project_path") or project_path).resolve()).name
 
     metrics = {
-        "total": summary.get("total_tests", 0),
-        "passed": summary.get("passed_tests", 0),
-        "failed": summary.get("failed_tests", 0),
-        "flaky": summary.get("flaky_tests", 0),
-        "skipped": summary.get("skipped_tests", 0),
-        "coverage": {
-            "lines": summary.get("coverage_lines", 0),
-            "branches": summary.get("coverage_branches", 0),
-        },
-        "durationSec": summary.get("duration_sec", 0),
+        "total": int(summary.get("total_tests", 0) or 0),
+        "passed": int(summary.get("passed_tests", 0) or 0),
+        "failed": int(summary.get("failed_tests", 0) or 0),
+        "skipped": int(summary.get("skipped_tests", 0) or 0),
+        "durationSec": float(summary.get("duration_sec", 0) or 0),
     }
 
     failures = _failures_table(summary, llm, funcs)
-    insights, risks, trace = _insights_and_risks_from_llm(llm, metrics["failed"])
-    summary_text = (
-        "در این اجرا کیفیت کلی مناسب است."
-        if metrics["failed"] == 0
-        else f"{metrics['failed']} تست شکست خورد؛ مسیرهای بحرانی را بررسی کنید."
-    )
+    insights, risks = _insights_and_risks_from_llm(llm, metrics["failed"])
     charts = _build_charts_data(summary, llm)
-    hotspots = _hotspots_from_llm(llm)
 
     return {
         "schemaVersion": "1.0.0",
         "project": {
             "name": proj_name,
-            "runId": meta.get("graph", {}).get("nodes", 0),
             "date": datetime.now().date().isoformat(),
-            "model": model_name,
-            "build": "",
         },
-        "summary": summary_text,
         "metrics": metrics,
         "insights": insights,
         "risks": risks,
         "failures": failures,
-        "trace": trace,
         "charts": charts,
-        "hotspots": hotspots,
-        "raw": {
-            "summary": summary,
-            "llm_prompt": prompt,
-            "function_summaries": {
-                k: {"line": v.get("line", 0)} for k, v in (funcs or {}).items()
-            },
-        },
     }
 
 
-# ------------------------- HTML rendering -------------------------
+# ---------- HTML rendering ----------
 
 
-def render_report_html(
-    project_path: str, out_dir: str, template_path: str, *, model_name: str = "gpt-4o"
-) -> str:
+def render_report_html(project_path: str, out_dir: str, template_path: str) -> str:
     proj = Path(project_path).resolve()
     out = Path(out_dir).resolve()
     tpl = Path(template_path).resolve()
     if not tpl.is_file():
         raise ReportBuildError(f"Template not found: {tpl}")
 
-    report_json = _build_report_json(proj, out, model_name)
+    report_json = _build_report_json(proj, out)
+
     html_tpl = tpl.read_text(encoding="utf-8")
 
-    # Prevent HTML-breaking sequences inside inline JSON
+    # Escape '<' to avoid breaking HTML
     json_safe = json.dumps(report_json, ensure_ascii=False).replace("<", "\\u003c")
 
+    # Keep REPORT variable as the template expects
     html = html_tpl.replace(
         "const REPORT = __REPORT_JSON__", f"const REPORT = {json_safe}"
     )
-    final_path = proj / "final_report.html"
+
+    # Write next to the template so relative app.css/app.js load correctly
+    final_path = tpl.parent / "final_report.html"
     final_path.write_text(html, encoding="utf-8")
     return str(final_path)
