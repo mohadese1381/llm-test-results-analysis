@@ -1,50 +1,8 @@
 {
-  "Presentation.Asp/Controllers/EventController.cs::EventController::GetAsync": {
-    "file": "Presentation.Asp/Controllers/EventController.cs",
-    "line": 21,
-    "docstring": "",
-    "code": "    [HttpGet(\"{calendarId}/{eventId}\")]    public async Task<ActionResult<OperationResult<EventResponse>>> GetAsync(string calendarId, string eventId)    {        var result = await _eventService.GetAsync(calendarId, eventId);"
-  },
-  "infrastructure/Repositories/UserScheduleRepository.cs::UserScheduleRepository::GetAsync": {
-    "file": "infrastructure/Repositories/UserScheduleRepository.cs",
-    "line": 48,
-    "docstring": "",
-    "code": "    public async Task<List<UserSchedule>> GetAsync(long userId, DayOfWeek? day = null)    {        var query = _context.UserSchedules            .Where(s => s.UserId == userId && s.Enable);"
-  },
-  "Application/IServices/IEventService.cs::IEventService::GetAsync": {
-    "file": "Application/IServices/IEventService.cs",
-    "line": 9,
-    "docstring": "",
-    "code": "    Task<OperationResult<EventResponse>> GetAsync(string calendarId, string eventId);"
-  },
-  "Application/Infrastructure.Abstractions/Repository.Abstraction/IUserScheduleRepository.cs::IUserScheduleRepository::GetAsync": {
-    "file": "Application/Infrastructure.Abstractions/Repository.Abstraction/IUserScheduleRepository.cs",
-    "line": 10,
-    "docstring": "",
-    "code": "    Task<List<UserSchedule>> GetAsync(long userId,DayOfWeek? day = null);"
-  },
-  "infrastructure/Integrations/GoogleEventProvider.cs::GoogleEventProvider::GetAsync": {
-    "file": "infrastructure/Integrations/GoogleEventProvider.cs",
-    "line": 16,
-    "docstring": "",
-    "code": "    public async Task<Event> GetAsync(string calendarId, string eventId)    {        var status = (await _calendarService.Events.Get(calendarId, eventId).ExecuteAsync() ??                      throw new EventNotFoundException(                          \"Event id not found\")).Status;"
-  },
-  "Application/Services/EventService.cs::EventService::GetAsync": {
-    "file": "Application/Services/EventService.cs",
-    "line": 21,
-    "docstring": "",
-    "code": "    public async Task<OperationResult<EventResponse>> GetAsync(string calendarId, string eventId)    {        var anEvent = await _googleEventProvider.GetAsync(calendarId, eventId);"
-  },
-  "Domain/Exceptions/EventNotFoundException.cs::EventNotFoundException::EventNotFoundException": {
-    "file": "Domain/Exceptions/EventNotFoundException.cs",
-    "line": 9,
-    "docstring": "",
-    "code": "    public EventNotFoundException() : base(\"Event Not Found Exception\",new Guid(\"44EECF82-C17F-44DE-9410-1062B36C1BAC\"))    {            }"
-  },
-  "Application/Infrastructure.Abstractions/Integration.Abstractions/IGoogleEventProvider.cs::IGoogleEventProvider::GetAsync": {
-    "file": "Application/Infrastructure.Abstractions/Integration.Abstractions/IGoogleEventProvider.cs",
-    "line": 7,
-    "docstring": "",
-    "code": "    Task<Event> GetAsync(string calendarId, string eventId);"
+  "source/sut.py::SystemUnderTest::function": {
+    "file": "source/sut.py",
+    "line": 11,
+    "docstring": "Function that returns the double of a numeric\n\nReturns:\n    int or float depending on the input, None if None\n\nRaises:\n    TypeError if unexpected type",
+    "code": "def function(value: Numeric|None) -> Numeric|None:\n        \"\"\"Function that returns the double of a numeric\n\n        Returns:\n            int or float depending on the input, None if None\n\n        Raises:\n            TypeError if unexpected type\n\n        \"\"\"\n        if value is None:\n            return None\n        if not isinstance(value, (int, float)):\n            raise TypeError(\"Expected numeric\")\n        return 2 * value"
   }
 }

@@ -1,16 +1,37 @@
 {
-  "total_tests": 44,
-  "executed_tests": 21,
-  "passed_tests": 20,
-  "failed_tests": 1,
-  "skipped_tests": 0,
-  "untagged_tests": 23,
+  "total_tests": 29,
+  "executed_tests": 24,
+  "passed_tests": 19,
+  "failed_tests": 4,
+  "skipped_tests": 1,
+  "untagged_tests": 5,
   "failed_detail": [
     {
-      "name": "<global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent",
-      "file": "Application.Tests/ServiceTests/EventServiceTests.cs",
+      "name": "tests/smoke/test_basic.py::test_will_fail",
+      "file": "tests/smoke/test_basic.py",
       "line": null,
-      "error": "Expectation has property AnyoneCanAddSelf that the other object does not have.\nExpectation has property Attachments that the other object does not have.\nExpectation has property Attendees that the other object does not have.\nExpectation has property AttendeesOmitted that the other object does not have.\nExpectation has property BirthdayProperties that the other object does not have.\nExpected property result.Data.ColorId to be <null>, but found \"\".\nExpectation has property ConferenceData that the other object does not have.\nExpectation has property CreatedRaw that the other object does not have.\nExpectation has property CreatedDateTimeOffset that the other object does not have.\nExpectation has property Created that the other object does not have.\nExpectation has property Creator that the other object does not have.\nExpected property result.Data.Description to be <null>, but found \"\".\nExpectation has property End that the other object does not have.\nExpectation has property EndTimeUnspecified that the other object does not have.\nExpectation has property ETag that the other object does not have.\nExpectation has property EventType that the other object does not have.\nExpectation has property ExtendedProperties that the other object does not have.\nExpectation has property FocusTimeProperties that the other object does not have.\nExpectation has property Gadget that the other object does not have.\nExpectation has property GuestsCanInviteOthers that the other object does not have.\nExpectation has property GuestsCanModify that the other object does not have.\nExpectation has property GuestsCanSeeOtherGuests that the other object does not have.\nExpectation has property HangoutLink that the other object does not have.\nExpectation has property HtmlLink that the other object does not have.\nExpectation has property ICalUID that the other object does not have.\nExpectation has property Kind that the other object does not have.\nExpectation has property Location that the other object does not have.\nExpectation has property Locked that the other object does not have.\nExpectation has property Organizer that the other object does not have.\nExpectation has property OriginalStartTime that the other object does not have.\nExpectation has property OutOfOfficeProperties that the other object does not have.\nExpectation has property PrivateCopy that the other object does not have.\nExpectation has property RecurringEventId that the other object does not have.\nExpectation has property Reminders that the other object does not have.\nExpectation has property Sequence that the other object does not have.\nExpectation has property Source that the other object does not have.\nExpectation has property Start that the other object does not have.\nExpectation has property Status that the other object does not have.\nExpected property result.Data.Summary to be <null>, but found \"\".\nExpectation has property Transparency that the other object does not have.\nExpectation has property UpdatedRaw that the other object does not have.\nExpectation has property UpdatedDateTimeOffset that the other object does not have.\nExpectation has property Updated that the other object does not have.\nExpectation has property Visibility that the other object does not have.\nExpectation has property WorkingLocationProperties that the other object does not have.\n\nWith configuration:\n- Prefer the declared type of the members\n- Compare enums by value\n- Compare tuples by their properties\n- Compare anonymous types by their properties\n- Compare records by their members\n- Include non-browsable members\n- Match member by name (or throw)\n- Be strict about the order of items in byte arrays\n- Without automatic conversion.",
+      "error": "AssertionError: Function should return double of the value\nassert 2 == 4",
+      "doc": ""
+    },
+    {
+      "name": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
+      "file": "tests/unit/test_delayed_assert.py",
+      "line": null,
+      "error": "AssertionError: #x1B[93m\n\nassert_expectations() called at#x1B[0m\n#x1B[4m#x1B[94m\"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:13\"#x1B[0m#x1B[93m in test_delayed_response_with_error()\n\n#x1B[91m#x1B[4mFailed Expectations : 1\n#x1B[0m\n1: #x1B[91mFailed at \"#x1B[0m#x1B[94m#x1B[4mC:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:12#x1B[0m#x1B[91m\", in test_delayed_response_with_error()\n\t#x1B[1m#x1B[4mErrorMessage:#x1B[0m#x1B[91m\t{\"key\": \"value\"}#x1B[0m\n    expect(response.json() == {}, response.text)",
+      "doc": ""
+    },
+    {
+      "name": "tests/unit/test_mocks.py::test_mock_patching",
+      "file": "tests/unit/test_mocks.py",
+      "line": null,
+      "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.",
+      "doc": ""
+    },
+    {
+      "name": "tests/unit/test_mocks.py::test_mock_side_effect",
+      "file": "tests/unit/test_mocks.py",
+      "line": null,
+      "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.",
       "doc": ""
     }
   ]

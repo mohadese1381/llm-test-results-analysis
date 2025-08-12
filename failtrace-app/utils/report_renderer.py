@@ -70,15 +70,13 @@ def _failure_types_from_summary(summary: dict) -> List[dict]:
     return [{"type": t, "count": c} for t, c in counts.most_common()]
 
 
-# --- NEW: normalize LLM-provided or derived type
+# --- normalize failure type for grouping
 def _norm_failure_type(s: str) -> str:
     if not s:
         return ""
     s = s.strip()
-    # strip package/namespace
     if "." in s:
         s = s.split(".")[-1]
-    # map common aliases
     aliases = {
         "AssertionFailedError": "AssertionError",
         "ComparisonFailure": "AssertionError",
@@ -95,9 +93,6 @@ def _norm_failure_type(s: str) -> str:
 
 
 def _failure_types_from_llm(llm: dict) -> List[dict]:
-    """
-    Prefer explicit `failure_type` per item; if missing, derive from error head.
-    """
     if not isinstance(llm, dict) or "analysis" not in llm:
         return []
     bucket: Counter[str] = Counter()
@@ -113,12 +108,72 @@ def _failure_types_from_llm(llm: dict) -> List[dict]:
     return [{"type": t, "count": c} for t, c in bucket.most_common()]
 
 
-def _build_charts_data(summary: dict, llm: dict) -> dict:
+# ---- RISK BUBBLES ----
+_SEV_IMPACT = {"low": 30, "medium": 65, "high": 90}  # Y axis
+_SEV_BOOST = {"low": 0.05, "medium": 0.10, "high": 0.20}  # added to base prob
+
+
+def _clamp(v: float, lo: float, hi: float) -> float:
+    return max(lo, min(hi, v))
+
+
+def _build_risk_bubbles(llm: dict, funcs: dict) -> List[dict]:
+    """
+    For each failed test in LLM analysis produce:
+      - probability (%): base frequency of its failure_type + severity boost
+      - impact (%): mapped from severity (low=30, medium=65, high=90)
+      - r: bubble radius (UI only) = clamp(8 + 2*len(call_path), 8, 22)
+      - risk: severity (low/medium/high)
+    Tooltip in UI shows only probability/impact/risk.
+    """
+    if not isinstance(llm, dict) or not llm.get("analysis"):
+        return []
+
+    items: List[dict] = llm["analysis"]
+    # frequency by normalized failure type
+    types: List[str] = []
+    for it in items:
+        ft = _norm_failure_type((it.get("failure_type") or "").strip())
+        if not ft:
+            err = (it.get("error") or "").strip()
+            head = err.split(":", 1)[0] if ":" in err else err
+            ft = _norm_failure_type(head)
+        types.append(ft or "Other")
+    freq = Counter(types)
+    total = max(1, len(items))
+
+    bubbles: List[dict] = []
+    for it in items:
+        sev = (it.get("severity") or "").strip().lower()
+        sev = sev if sev in {"low", "medium", "high"} else "medium"
+
+        # base probability from type frequency
+        ft = _norm_failure_type((it.get("failure_type") or "").strip())
+        if not ft:
+            err = (it.get("error") or "").strip()
+            head = err.split(":", 1)[0] if ":" in err else err
+            ft = _norm_failure_type(head)
+        base = freq.get(ft or "Other", 0) / total
+        prob = _clamp(base + _SEV_BOOST[sev], 0.0, 1.0) * 100.0
+
+        impact = float(_SEV_IMPACT[sev])
+
+        path_len = len(it.get("call_path") or [])
+        r = _clamp(8 + 2 * path_len, 8, 22)
+
+        bubbles.append(
+            {"probability": round(prob, 2), "impact": impact, "r": r, "risk": sev}
+        )
+    return bubbles
+
+
+def _build_charts_data(summary: dict, llm: dict, funcs: dict) -> dict:
     ft_llm = _failure_types_from_llm(llm)
     ft_sum = _failure_types_from_summary(summary)
     return {
         "testsOverview": _build_tests_overview(summary),
         "failureTypes": ft_llm or ft_sum,
+        "riskBubbles": _build_risk_bubbles(llm, funcs),
     }
 
 
@@ -139,7 +194,6 @@ def _locations_from_locus(locus: dict, lines_map: Dict[str, int]) -> List[str]:
     locs: List[str] = []
     if not isinstance(locus, dict):
         return locs
-
     for fn in locus.get("functions", []) or []:
         ln = int(lines_map.get(fn, 0) or 0)
         file_part = fn.split("::", 1)[0] if "::" in fn else ""
@@ -147,12 +201,10 @@ def _locations_from_locus(locus: dict, lines_map: Dict[str, int]) -> List[str]:
             locs.append(f"{file_part}:{ln}")
         elif file_part:
             locs.append(file_part)
-
     if not locs:
         for f in locus.get("files", []) or []:
             if f:
                 locs.append(f)
-
     seen = set()
     uniq: List[str] = []
     for s in locs:
@@ -162,7 +214,7 @@ def _locations_from_locus(locus: dict, lines_map: Dict[str, int]) -> List[str]:
     return uniq
 
 
-# ---------- Insights / Risks / Failures ----------
+# ---------- Insights / Failures ----------
 
 
 def _normalize_cause(txt: str) -> str:
@@ -178,19 +230,16 @@ def _insights_and_risks_from_llm(
     llm: dict, failed_count: int
 ) -> Tuple[List[dict], List[dict]]:
     insights: List[dict] = []
-    risks: List[dict] = []
+    risks: List[dict] = []  # kept for backward compatibility (unused in UI)
 
-    if isinstance(llm, dict) and "analysis" in llm and llm["analysis"]:
+    if isinstance(llm, dict) and llm.get("analysis"):
         items: List[dict] = llm["analysis"]
-
-        # group by normalized root cause (fallback: error head)
         groups: dict[str, dict] = {}
         for it in items:
             rc_raw = (it.get("root_cause") or "").strip()
-            key = _normalize_cause(rc_raw)
-            if not key:
-                err = (it.get("error") or "").strip()
-                key = _normalize_cause(err.split(":", 1)[0] if ":" in err else err)
+            key = _normalize_cause(rc_raw) or _normalize_cause(
+                (it.get("error") or "").split(":", 1)[0]
+            )
             if key not in groups:
                 groups[key] = {
                     "title": rc_raw or (it.get("error") or "Unspecified cause"),
@@ -198,62 +247,20 @@ def _insights_and_risks_from_llm(
                     "files": Counter(),
                     "funcs": Counter(),
                 }
-
             g = groups[key]
             tn = (it.get("test_name") or "").strip()
             if tn:
                 g["tests"].append(tn)
-            locus = it.get("locus") or {}
-            for f in locus.get("files", []) or []:
-                if f:
-                    g["files"][f] += 1
-            for fn in locus.get("functions", []) or []:
-                if fn:
-                    g["funcs"][fn] += 1
-
-        # materialize insights
-        def _top3(c: Counter) -> List[str]:
-            return [k for k, _ in c.most_common(3)]
-
         ordered = sorted(groups.values(), key=lambda g: len(g["tests"]), reverse=True)
         for g in ordered:
-            locs = _top3(g["funcs"]) or _top3(g["files"])
-            loc_str = ", ".join(locs) if locs else "—"
             insights.append(
-                {
-                    "title": g["title"],
-                    "detail": f"{len(g['tests'])} failing test(s) • key locations: {loc_str}",
-                }
+                {"title": g["title"], "detail": f"{len(g['tests'])} failing test(s)"}
             )
-
-        # aggregate risks by severity only
-        sev_counts: Counter = Counter(
-            (it.get("severity") or "").strip().lower()
-            for it in items
-            if (it.get("severity") or "").strip().lower() in {"high", "medium", "low"}
-        )
-        for sev in ("high", "medium", "low"):
-            if sev_counts.get(sev, 0):
-                risks.append(
-                    {
-                        "level": sev,
-                        "title": f"{sev_counts[sev]} failing test(s)",
-                        "action": "Triage owners, fix root causes, add/adjust coverage",
-                    }
-                )
         return insights, risks
 
-    # fallback when no llm analysis
     if failed_count > 0:
         insights.append(
             {"title": "Failures detected", "detail": f"{failed_count} failing test(s)."}
-        )
-        risks.append(
-            {
-                "level": "medium",
-                "title": "Pipeline quality risk",
-                "action": "Investigate and fix failures",
-            }
         )
     else:
         insights.append({"title": "All clear", "detail": "No failures in this run."})
@@ -263,8 +270,7 @@ def _insights_and_risks_from_llm(
 def _failures_table(summary: dict, llm: dict, funcs: dict) -> List[dict]:
     rows: List[dict] = []
     lines_map = _line_lookup(funcs)
-
-    if isinstance(llm, dict) and "analysis" in llm and llm["analysis"]:
+    if isinstance(llm, dict) and llm.get("analysis"):
         for it in llm["analysis"]:
             locus = it.get("locus") or {}
             files = locus.get("files", []) or []
@@ -285,8 +291,6 @@ def _failures_table(summary: dict, llm: dict, funcs: dict) -> List[dict]:
                 }
             )
         return rows
-
-    # Fallback: summary only
     for f in summary.get("failed_detail", []) or []:
         rows.append(
             {
@@ -327,17 +331,14 @@ def _build_report_json(project_path: Path, out_dir: Path) -> dict:
 
     failures = _failures_table(summary, llm, funcs)
     insights, risks = _insights_and_risks_from_llm(llm, metrics["failed"])
-    charts = _build_charts_data(summary, llm)
+    charts = _build_charts_data(summary, llm, funcs)
 
     return {
         "schemaVersion": "1.0.0",
-        "project": {
-            "name": proj_name,
-            "date": datetime.now().date().isoformat(),
-        },
+        "project": {"name": proj_name, "date": datetime.now().date().isoformat()},
         "metrics": metrics,
         "insights": insights,
-        "risks": risks,
+        "risks": risks,  # kept for backward compat (UI ignores)
         "failures": failures,
         "charts": charts,
     }
@@ -354,18 +355,11 @@ def render_report_html(project_path: str, out_dir: str, template_path: str) -> s
         raise ReportBuildError(f"Template not found: {tpl}")
 
     report_json = _build_report_json(proj, out)
-
     html_tpl = tpl.read_text(encoding="utf-8")
-
-    # Escape '<' to avoid breaking HTML
     json_safe = json.dumps(report_json, ensure_ascii=False).replace("<", "\\u003c")
-
-    # Keep REPORT variable as the template expects
     html = html_tpl.replace(
         "const REPORT = __REPORT_JSON__", f"const REPORT = {json_safe}"
     )
-
-    # Write next to the template so relative app.css/app.js load correctly
     final_path = tpl.parent / "final_report.html"
     final_path.write_text(html, encoding="utf-8")
     return str(final_path)

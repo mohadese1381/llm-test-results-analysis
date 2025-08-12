@@ -26,7 +26,7 @@
         </div>
       </header>
 
-      <!-- compact KPI row (no tall empty space) -->
+      <!-- compact KPI row -->
       <section class="card card--kpis">
         <div class="kpis">
           <div class="kpi">
@@ -63,14 +63,14 @@
         </div>
       </section>
 
-      <section class="grid" style="margin-top: 16px">
+      <!-- equal height row -->
+      <section class="grid grid--equal" style="margin-top: 16px">
         <div class="card card-flex">
           <div class="section-title"><h3>Insights</h3></div>
           <p class="section-hint">
-            Concise, high-signal observations derived from the LLM analysis—what
-            patterns stand out and where the system tends to fail.
+            Concise, high-signal observations derived from the LLM analysis.
           </p>
-          <div class="table-wrap">
+          <div class="table-wrap table-wrap--scroll">
             <table class="table table-compact" id="insightsTable">
               <thead>
                 <tr>
@@ -83,26 +83,18 @@
           </div>
         </div>
 
+        <!-- replaced Risks table with Bubble chart -->
         <div class="card card-flex">
-          <div class="section-title"><h3>Risks</h3></div>
-          <div class="table-wrap">
-            <table class="table table-compact" id="risksTable">
-              <thead>
-                <tr>
-                  <th style="width: 14%">Level</th>
-                  <th style="width: 36%">Title</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
+          <div class="section-title"><h3>Risk Matrix (Bubble)</h3></div>
+          <div class="chart-area stick-bottom">
+            <canvas id="riskBubblesChart"></canvas>
           </div>
         </div>
       </section>
 
       <section class="card" style="margin-top: 16px">
         <div class="section-title"><h3>Failed Items</h3></div>
-        <div class="table-wrap">
+        <div  class="table-wrap table-wrap--scroll">
           <table class="table table-fail" id="failTable">
             <thead>
               <tr>
@@ -120,7 +112,7 @@
     </div>
 
     <script>
-      const REPORT = {"schemaVersion": "1.0.0", "project": {"name": "Service", "date": "2025-08-11"}, "metrics": {"total": 44, "passed": 20, "failed": 1, "skipped": 0, "durationSec": 0.0}, "insights": [{"title": "The test expects properties in the EventResponse object to be null or absent, but the actual response contains non-null values and additional properties, likely due to mismatched serialization or incorrect mapping in GoogleEventProvider::GetAsync.", "detail": "1 failing test(s) • key locations: Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent, Application/IServices/IEventService.cs::IEventService::GetAsync, Application/Services/EventService.cs::EventService::GetAsync"}], "risks": [{"level": "medium", "title": "1 failing test(s)", "action": "Triage owners, fix root causes, add/adjust coverage"}], "failures": [{"id": "\u003cglobal>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent", "title": "\u003cglobal>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent", "type": "unit", "message": "Expectation has property AnyoneCanAddSelf that the other object does not have. Expected property result.Data.ColorId to be \u003cnull>, but found \"\". Expected property result.Data.Description to be \u003cnull>, but found \"\". Expected property result.Data.Summary to be \u003cnull>, but found \"\".", "root_cause": "The test expects properties in the EventResponse object to be null or absent, but the actual response contains non-null values and additional properties, likely due to mismatched serialization or incorrect mapping in GoogleEventProvider::GetAsync.", "severity": "medium", "file": "Application.Tests/ServiceTests/EventServiceTests.cs, Application/IServices/IEventService.cs, Application/Services/EventService.cs, Application/Infrastructure.Abstractions/Integration.Abstractions/IGoogleEventProvider.cs, infrastructure/Integrations/GoogleEventProvider.cs", "location": "Application.Tests/ServiceTests/EventServiceTests.cs, Application/IServices/IEventService.cs:9, Application/Services/EventService.cs:21, Application/Infrastructure.Abstractions/Integration.Abstractions/IGoogleEventProvider.cs:7, infrastructure/Integrations/GoogleEventProvider.cs:16", "functions": ["Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent", "Application/IServices/IEventService.cs::IEventService::GetAsync", "Application/Services/EventService.cs::EventService::GetAsync", "Application/Infrastructure.Abstractions/Integration.Abstractions/IGoogleEventProvider.cs::IGoogleEventProvider::GetAsync", "infrastructure/Integrations/GoogleEventProvider.cs::GoogleEventProvider::GetAsync"], "suggested_fixes": ["Ensure the mapping logic in GoogleEventProvider::GetAsync aligns with the expected EventResponse schema.", "Update test expectations to match the actual schema if the additional properties are valid.", "Add validation in EventService::GetAsync to enforce the expected schema before returning the response."]}], "charts": {"testsOverview": {"passed": 20, "failed": 1, "skipped": 0}, "failureTypes": [{"type": "DataMismatch", "count": 1}]}};
+      const REPORT = {"schemaVersion": "1.0.0", "project": {"name": "pytest-samples", "date": "2025-08-11"}, "metrics": {"total": 29, "passed": 19, "failed": 4, "skipped": 1, "durationSec": 0.0}, "insights": [{"title": "The mock object lacks a valid spec, causing 'called_once' to be an invalid attribute.", "detail": "2 failing test(s)"}, {"title": "The function in SystemUnderTest does not correctly double the input value.", "detail": "1 failing test(s)"}, {"title": "The response JSON does not match the expected empty dictionary, likely due to incorrect API response or mocking setup.", "detail": "1 failing test(s)"}], "risks": [], "failures": [{"id": "tests/smoke/test_basic.py::test_will_fail", "title": "tests/smoke/test_basic.py::test_will_fail", "type": "unit", "message": "AssertionError: Function should return double of the value\nassert 2 == 4", "root_cause": "The function in SystemUnderTest does not correctly double the input value.", "severity": "high", "file": "tests/smoke/test_basic.py, source/sut.py", "location": "source/sut.py:11", "functions": ["source/sut.py::SystemUnderTest::function"], "suggested_fixes": ["Correct the implementation of SystemUnderTest::function to ensure it doubles the input value.", "Add unit tests to validate the doubling behavior for various inputs."]}, {"id": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error", "title": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error", "type": "unit", "message": "AssertionError: Failed Expectations : 1\nexpect(response.json() == {}, response.text)", "root_cause": "The response JSON does not match the expected empty dictionary, likely due to incorrect API response or mocking setup.", "severity": "medium", "file": "tests/unit/test_delayed_assert.py", "location": "tests/unit/test_delayed_assert.py", "functions": ["tests/unit/test_delayed_assert.py::test_delayed_response_with_error"], "suggested_fixes": ["Verify the API response or mock setup to ensure it returns an empty dictionary.", "Update the test to handle non-empty responses if expected behavior has changed."]}, {"id": "tests/unit/test_mocks.py::test_mock_patching", "title": "tests/unit/test_mocks.py::test_mock_patching", "type": "unit", "message": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.", "root_cause": "The mock object lacks a valid spec, causing 'called_once' to be an invalid attribute.", "severity": "medium", "file": "tests/unit/test_mocks.py", "location": "tests/unit/test_mocks.py", "functions": ["tests/unit/test_mocks.py::test_mock_patching"], "suggested_fixes": ["Add a spec to the mock object to ensure 'called_once' is a valid attribute.", "Replace 'called_once' with a valid mock assertion method like 'assert_called_once'."]}, {"id": "tests/unit/test_mocks.py::test_mock_side_effect", "title": "tests/unit/test_mocks.py::test_mock_side_effect", "type": "unit", "message": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.", "root_cause": "The mock object lacks a valid spec, causing 'called_once' to be an invalid attribute.", "severity": "medium", "file": "tests/unit/test_mocks.py", "location": "tests/unit/test_mocks.py", "functions": ["tests/unit/test_mocks.py::test_mock_side_effect"], "suggested_fixes": ["Add a spec to the mock object to ensure 'called_once' is a valid attribute.", "Replace 'called_once' with a valid mock assertion method like 'assert_called_once'."]}], "charts": {"testsOverview": {"passed": 19, "failed": 4, "skipped": 1}, "failureTypes": [{"type": "AssertionError", "count": 2}, {"type": "AttributeError", "count": 2}], "riskBubbles": [{"probability": 70.0, "impact": 90.0, "r": 12, "risk": "high"}, {"probability": 60.0, "impact": 65.0, "r": 10, "risk": "medium"}, {"probability": 60.0, "impact": 65.0, "r": 10, "risk": "medium"}, {"probability": 60.0, "impact": 65.0, "r": 10, "risk": "medium"}]}};
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="app.js"></script>

@@ -27,7 +27,7 @@ class PromptGenerator:
                     "functions": ["<file::Class::func>", "..."],
                 },
                 "failure_type": "<short normalized type, e.g. AssertionError | NullPointerException | Timeout | Other>",
-                "root_cause": "<precise details in at least one sentence to 3 sentences at most>",
+                "root_cause": "<precise details in at least 3 sentences>",
                 "severity": "<low|medium|high>",
                 "suggested_fixes": ["<actionable fix 1>", "<actionable fix 2>"],
                 "rationale": ["<short high-level evidence, no CoT>", "..."],

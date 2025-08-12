@@ -9,249 +9,143 @@ Your tasks:
 Do not include chain-of-thought or step-by-step reasoning in the output; only final JSON.
 
 TEST SUMMARY:
-- Total: 44 | Passed: 20 | Failed: 1 | Skipped: 0
+- Total: 29 | Passed: 19 | Failed: 4 | Skipped: 1
 - Failures:
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent: Expectation has property AnyoneCanAddSelf that the other object does not have.
-Expectation has property Attachments that the other object does not have.
-Expectation has property Attendees that the other object does not have.
-Expectation has property AttendeesOmitted that the other object does not have.
-Expectation has property BirthdayProperties that the other object does not have.
-Expected property result.Data.ColorId to be <null>, but found "".
-Expectation has property ConferenceData that the other object does not have.
-Expectation has property CreatedRaw that the other object does not have.
-Expectation has property CreatedDateTimeOffset that the other object does not have.
-Expectation has property Created that the other object does not have.
-Expectation has property Creator that the other object does not have.
-Expected property result.Data.Description to be <null>, but found "".
-Expectation has property End that the other object does not have.
-Expectation has property EndTimeUnspecified that the other object does not have.
-Expectation has property ETag that the other object does not have.
-Expectation has property EventType that the other object does not have.
-Expectation has property ExtendedProperties that the other object does not have.
-Expectation has property FocusTimeProperties that the other object does not have.
-Expectation has property Gadget that the other object does not have.
-Expectation has property GuestsCanInviteOthers that the other object does not have.
-Expectation has property GuestsCanModify that the other object does not have.
-Expectation has property GuestsCanSeeOtherGuests that the other object does not have.
-Expectation has property HangoutLink that the other object does not have.
-Expectation has property HtmlLink that the other object does not have.
-Expectation has property ICalUID that the other object does not have.
-Expectation has property Kind that the other object does not have.
-Expectation has property Location that the other object does not have.
-Expectation has property Locked that the other object does not have.
-Expectation has property Organizer that the other object does not have.
-Expectation has property OriginalStartTime that the other object does not have.
-Expectation has property OutOfOfficeProperties that the other object does not have.
-Expectation has property PrivateCopy that the other object does not have.
-Expectation has property RecurringEventId that the other object does not have.
-Expectation has property Reminders that the other object does not have.
-Expectation has property Sequence that the other object does not have.
-Expectation has property Source that the other object does not have.
-Expectation has property Start that the other object does not have.
-Expectation has property Status that the other object does not have.
-Expected property result.Data.Summary to be <null>, but found "".
-Expectation has property Transparency that the other object does not have.
-Expectation has property UpdatedRaw that the other object does not have.
-Expectation has property UpdatedDateTimeOffset that the other object does not have.
-Expectation has property Updated that the other object does not have.
-Expectation has property Visibility that the other object does not have.
-Expectation has property WorkingLocationProperties that the other object does not have.
+  • tests/smoke/test_basic.py::test_will_fail: AssertionError: Function should return double of the value
+assert 2 == 4
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error: AssertionError: #x1B[93m
 
-With configuration:
-- Prefer the declared type of the members
-- Compare enums by value
-- Compare tuples by their properties
-- Compare anonymous types by their properties
-- Compare records by their members
-- Include non-browsable members
-- Match member by name (or throw)
-- Be strict about the order of items in byte arrays
-- Without automatic conversion.
+assert_expectations() called at#x1B[0m
+#x1B[4m#x1B[94m"C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:13"#x1B[0m#x1B[93m in test_delayed_response_with_error()
+
+#x1B[91m#x1B[4mFailed Expectations : 1
+#x1B[0m
+1: #x1B[91mFailed at "#x1B[0m#x1B[94m#x1B[4mC:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12#x1B[0m#x1B[91m", in test_delayed_response_with_error()
+	#x1B[1m#x1B[4mErrorMessage:#x1B[0m#x1B[91m	{"key": "value"}#x1B[0m
+    expect(response.json() == {}, response.text)
+  • tests/unit/test_mocks.py::test_mock_patching: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+  • tests/unit/test_mocks.py::test_mock_side_effect: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
 
 CRITICAL PATHS:
 
-Test: <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent
-Error: Expectation has property AnyoneCanAddSelf that the other object does not have.
-Expectation has property Attachments that the other object does not have.
-Expectation has property Attendees that the other object does not have.
-Expectation has property AttendeesOmitted that the other object does not have.
-Expectation has property BirthdayProperties that the other object does not have.
-Expected property result.Data.ColorId to be <null>, but found "".
-Expectation has property ConferenceData that the other object does not have.
-Expectation has property CreatedRaw that the other object does not have.
-Expectation has property CreatedDateTimeOffset that the other object does not have.
-Expectation has property Created that the other object does not have.
-Expectation has property Creator that the other object does not have.
-Expected property result.Data.Description to be <null>, but found "".
-Expectation has property End that the other object does not have.
-Expectation has property EndTimeUnspecified that the other object does not have.
-Expectation has property ETag that the other object does not have.
-Expectation has property EventType that the other object does not have.
-Expectation has property ExtendedProperties that the other object does not have.
-Expectation has property FocusTimeProperties that the other object does not have.
-Expectation has property Gadget that the other object does not have.
-Expectation has property GuestsCanInviteOthers that the other object does not have.
-Expectation has property GuestsCanModify that the other object does not have.
-Expectation has property GuestsCanSeeOtherGuests that the other object does not have.
-Expectation has property HangoutLink that the other object does not have.
-Expectation has property HtmlLink that the other object does not have.
-Expectation has property ICalUID that the other object does not have.
-Expectation has property Kind that the other object does not have.
-Expectation has property Location that the other object does not have.
-Expectation has property Locked that the other object does not have.
-Expectation has property Organizer that the other object does not have.
-Expectation has property OriginalStartTime that the other object does not have.
-Expectation has property OutOfOfficeProperties that the other object does not have.
-Expectation has property PrivateCopy that the other object does not have.
-Expectation has property RecurringEventId that the other object does not have.
-Expectation has property Reminders that the other object does not have.
-Expectation has property Sequence that the other object does not have.
-Expectation has property Source that the other object does not have.
-Expectation has property Start that the other object does not have.
-Expectation has property Status that the other object does not have.
-Expected property result.Data.Summary to be <null>, but found "".
-Expectation has property Transparency that the other object does not have.
-Expectation has property UpdatedRaw that the other object does not have.
-Expectation has property UpdatedDateTimeOffset that the other object does not have.
-Expectation has property Updated that the other object does not have.
-Expectation has property Visibility that the other object does not have.
-Expectation has property WorkingLocationProperties that the other object does not have.
-
-With configuration:
-- Prefer the declared type of the members
-- Compare enums by value
-- Compare tuples by their properties
-- Compare anonymous types by their properties
-- Compare records by their members
-- Include non-browsable members
-- Match member by name (or throw)
-- Be strict about the order of items in byte arrays
-- Without automatic conversion.
+Test: tests/smoke/test_basic.py::test_will_fail
+Error: AssertionError: Function should return double of the value
+assert 2 == 4
 Downstream:
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::Application/IServices/IEventService.cs::IEventService::GetAsync
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::Application/Services/EventService.cs::EventService::GetAsync
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::Application/Infrastructure.Abstractions/Integration.Abstractions/IGoogleEventProvider.cs::IGoogleEventProvider::GetAsync
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::Application/Infrastructure.Abstractions/Repository.Abstraction/IUserScheduleRepository.cs::IUserScheduleRepository::GetAsync
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::infrastructure/Integrations/GoogleEventProvider.cs::GoogleEventProvider::GetAsync → <global>::Domain/Exceptions/EventNotFoundException.cs::EventNotFoundException::EventNotFoundException
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::infrastructure/Integrations/GoogleEventProvider.cs::GoogleEventProvider::GetAsync
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::Presentation.Asp/Controllers/EventController.cs::EventController::GetAsync
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::infrastructure/Repositories/UserScheduleRepository.cs::UserScheduleRepository::GetAsync
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::Application/Services/EventService.cs::EventService::GetAsync
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::infrastructure/Integrations/GoogleEventProvider.cs::GoogleEventProvider::GetAsync → <global>::Domain/Exceptions/EventNotFoundException.cs::EventNotFoundException::EventNotFoundException
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::Application/Services/EventService.cs::EventService::GetAsync
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::infrastructure/Repositories/UserScheduleRepository.cs::UserScheduleRepository::GetAsync
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::infrastructure/Integrations/GoogleEventProvider.cs::GoogleEventProvider::GetAsync
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::infrastructure/Integrations/GoogleEventProvider.cs::GoogleEventProvider::GetAsync
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::infrastructure/Repositories/UserScheduleRepository.cs::UserScheduleRepository::GetAsync
-  • <global>::Application.Tests/ServiceTests/EventServiceTests.cs::EventServiceTests::GetAsync_WhenIdExists_returnEvent → <global>::Presentation.Asp/Controllers/EventController.cs::EventController::GetAsync
+  • tests/smoke/test_basic.py::test_will_fail → source/sut.py::SystemUnderTest::function
+  • tests/smoke/test_basic.py::test_will_fail → source/sut.py::SystemUnderTest::function
+  • tests/smoke/test_basic.py::test_will_fail → source/sut.py::SystemUnderTest::function
+  • tests/smoke/test_basic.py::test_will_fail
+
+Test: tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+Error: AssertionError: #x1B[93m
+
+assert_expectations() called at#x1B[0m
+#x1B[4m#x1B[94m"C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:13"#x1B[0m#x1B[93m in test_delayed_response_with_error()
+
+#x1B[91m#x1B[4mFailed Expectations : 1
+#x1B[0m
+1: #x1B[91mFailed at "#x1B[0m#x1B[94m#x1B[4mC:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12#x1B[0m#x1B[91m", in test_delayed_response_with_error()
+	#x1B[1m#x1B[4mErrorMessage:#x1B[0m#x1B[91m	{"key": "value"}#x1B[0m
+    expect(response.json() == {}, response.text)
+Downstream:
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+
+Test: tests/unit/test_mocks.py::test_mock_patching
+Error: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+Downstream:
+  • tests/unit/test_mocks.py::test_mock_patching
+  • tests/unit/test_mocks.py::test_mock_patching
+  • tests/unit/test_mocks.py::test_mock_patching
+
+Test: tests/unit/test_mocks.py::test_mock_side_effect
+Error: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+Downstream:
+  • tests/unit/test_mocks.py::test_mock_side_effect
+  • tests/unit/test_mocks.py::test_mock_side_effect
+  • tests/unit/test_mocks.py::test_mock_side_effect
+  • tests/unit/test_mocks.py::test_mock_side_effect
+  • tests/unit/test_mocks.py::test_mock_side_effect
 
 FUNCTION SNIPPETS (trimmed):
 
-Presentation.Asp/Controllers/EventController.cs::EventController::GetAsync (line 21):
+source/sut.py::SystemUnderTest::function (line 11):
 """
+Function that returns the double of a numeric
 
-"""
-        [HttpGet("{calendarId}/{eventId}")]    public async Task<ActionResult<OperationResult<EventResponse>>> GetAsync(string calendarId, string eventId)    {        var result = await _eventService.GetAsync(calendarId, eventId);
+Returns:
+    int or float depending on the input, None if None
 
-infrastructure/Repositories/UserScheduleRepository.cs::UserScheduleRepository::GetAsync (line 48):
+Raises:
+    TypeError if unexpected type
 """
-
-"""
-        public async Task<List<UserSchedule>> GetAsync(long userId, DayOfWeek? day = null)    {        var query = _context.UserSchedules            .Where(s => s.UserId == userId && s.Enable);
-
-Application/IServices/IEventService.cs::IEventService::GetAsync (line 9):
-"""
-
-"""
-        Task<OperationResult<EventResponse>> GetAsync(string calendarId, string eventId);
-
-Application/Infrastructure.Abstractions/Repository.Abstraction/IUserScheduleRepository.cs::IUserScheduleRepository::GetAsync (line 10):
-"""
-
-"""
-        Task<List<UserSchedule>> GetAsync(long userId,DayOfWeek? day = null);
-
-infrastructure/Integrations/GoogleEventProvider.cs::GoogleEventProvider::GetAsync (line 16):
-"""
-
-"""
-        public async Task<Event> GetAsync(string calendarId, string eventId)    {        var status = (await _calendarService.Events.Get(calendarId, eventId).ExecuteAsync() ??                      throw new EventNotFoundException(                          "Event id not found")).Status;
-
-Application/Services/EventService.cs::EventService::GetAsync (line 21):
-"""
-
-"""
-        public async Task<OperationResult<EventResponse>> GetAsync(string calendarId, string eventId)    {        var anEvent = await _googleEventProvider.GetAsync(calendarId, eventId);
-
-Domain/Exceptions/EventNotFoundException.cs::EventNotFoundException::EventNotFoundException (line 9):
-"""
-
-"""
-        public EventNotFoundException() : base("Event Not Found Exception",new Guid("44EECF82-C17F-44DE-9410-1062B36C1BAC"))    {            }
-
-Application/Infrastructure.Abstractions/Integration.Abstractions/IGoogleEventProvider.cs::IGoogleEventProvider::GetAsync (line 7):
-"""
-
-"""
-        Task<Event> GetAsync(string calendarId, string eventId);
+    def function(value: Numeric|None) -> Numeric|None:
+            """Function that returns the double of a numeric
+    
+            Returns:
+                int or float depending on the input, None if None
+    
+            Raises:
+                TypeError if unexpected type
+    
+            """
+        ...
 
 FEW-SHOT EXAMPLES (style only):
 
 INPUT:
 [EXAMPLE — STYLE & STRUCTURE ONLY, DO NOT COPY ASSUMPTIONS]
-GRAPH SUMMARY: 210 nodes, 402 edges.
+GRAPH SUMMARY: 152 nodes, 289 edges.
 
 TEST SUMMARY:
-• Total: 65
-• Executed: 65 (✅58, ❌2, ⚠️5)
+• Total: 87
+• Executed: 87 (✅76, ❌2, ⚠️9)
 • Failures detail:
-  - Tests.AsyncQueueTests::EnqueueDequeue_Race: InvalidOperationException: queue empty
+  - tests/test_math.py::test_divide_by_zero: ZeroDivisionError: division by zero
 
 CRITICAL PATHS for each failed test:
 
-Test: Tests.AsyncQueueTests::EnqueueDequeue_Race
-Error: InvalidOperationException: queue empty
+Test: tests/test_math.py::test_divide_by_zero
+Error: ZeroDivisionError: division by zero
 Upstream:
-  • AsyncQueue.cs::DequeueAsync → AsyncQueue.cs::TryDequeue
+  • math_utils.py::safe_divide → math_utils.py::_normalize_inputs
 Downstream:
-  • Tests.AsyncQueueTests::EnqueueDequeue_Race
+  • tests/test_math.py::test_divide_by_zero
 
 FUNCTION SNIPPETS:
 
-AsyncQueue.cs::DequeueAsync (line 74):
-    public async Task<T> DequeueAsync() {
-        return TryDequeue(); // no await on producer signal
-    }
+math_utils.py::safe_divide (line 42):
+"""
+Divide a by b, guarding invalid inputs.
+"""
+    def safe_divide(a, b):
+        return a / b
 
-AsyncQueue.cs::TryDequeue (line 33):
-    public T TryDequeue() { /* returns default if empty */ }
+math_utils.py::_normalize_inputs (line 12):
+"""
+Ensure inputs are numeric and non-null.
+"""
+    def _normalize_inputs(a, b):
+        ...
 OUTPUT:
 {
   "analysis": [
     {
-      "test_name": "Tests.AsyncQueueTests::EnqueueDequeue_Race",
-      "error": "InvalidOperationException: queue empty",
-      "call_path": ["AsyncQueue.cs::DequeueAsync", "AsyncQueue.cs::TryDequeue"],
+      "test_name": "tests/test_math.py::test_divide_by_zero",
+      "error": "ZeroDivisionError: division by zero",
+      "call_path": ["math_utils.py::safe_divide", "math_utils.py::_normalize_inputs"],
       "reasoning": [
-        "1) DequeueAsync بدون انتظار سیگنال تولیدکننده فوراً TryDequeue را اجرا می‌کند",
-        "2) در رقابت زمان‌بندی، مصرف‌کننده جلوتر از تولیدکننده اجرا می‌شود",
-        "3) TryDequeue روی صف خالی اجرا شده و استثنا ایجاد می‌شود"
+        "1) safe_divide بدون بررسی b==0 مستقیماً a/b را اجرا می‌کند",
+        "2) _normalize_inputs فقط None-check دارد و صفر نبودن b را تضمین نمی‌کند",
+        "3) مسیر بحرانی وقوع خطا را در safe_divide تایید می‌کند"
       ],
-      "root_cause": "نبود همگام‌سازی/سیگنالینگ مناسب بین producer/consumer",
+      "root_cause": "نبود guard برای تقسیم بر صفر در safe_divide",
       "suggested_fixes": [
-        "استفاده از SemaphoreSlim/TaskCompletionSource برای سیگنال آماده بودن آیتم",
-        "در TryDequeue رفتار کنترل‌شده برای empty و تست‌های هم‌زمانی اضافه کنید"
+        "افزودن بررسی b==0 و بازگرداندن مقدار امن یا استثنای کنترل‌شده",
+        "افزودن قید b!=0 در _normalize_inputs و پوشش تستی آن"
       ]
     }
   ]

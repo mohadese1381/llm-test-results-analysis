@@ -6,8 +6,8 @@
   const t = charts.testsOverview || {};
   const ftypes = Array.isArray(charts.failureTypes) ? charts.failureTypes : [];
   const insights = Array.isArray(r.insights) ? r.insights : [];
-  const risks = Array.isArray(r.risks) ? r.risks : [];
   const failures = Array.isArray(r.failures) ? r.failures : [];
+  const bubbles = Array.isArray(charts.riskBubbles) ? charts.riskBubbles : [];
 
   // Header
   document.getElementById("projName").textContent = proj.name || "—";
@@ -34,28 +34,11 @@
     insTBody.appendChild(tr);
   });
 
-  // Risks table (aggregated only; NO per-failure rows)
-  const risksTBody = document.querySelector("#risksTable tbody");
-  risks.forEach((x) => {
-    const tr = document.createElement("tr");
-    const tdLevel = document.createElement("td");
-    const tdTitle = document.createElement("td");
-    const tdAction = document.createElement("td");
-    const level = (x.level || "").toLowerCase();
-    tdLevel.textContent = x.level || "";
-    tdLevel.className = `risk ${level}`;
-    tdTitle.textContent = x.title || "";
-    tdAction.textContent = x.action || "";
-    tr.append(tdLevel, tdTitle, tdAction);
-    risksTBody.appendChild(tr);
-  });
-
   // Failures table
   const tbody = document.querySelector("#failTable tbody");
   failures.forEach((item) => {
     const tr = document.createElement("tr");
 
-    // Suggested fixes
     const fixes = Array.isArray(item.suggested_fixes)
       ? item.suggested_fixes
       : [];
@@ -68,7 +51,6 @@
       fixesWrap.appendChild(tag);
     });
 
-    // Location: prefer functions → location → file
     let locationText = "";
     if (Array.isArray(item.functions) && item.functions.length) {
       locationText = item.functions.join(", ");
@@ -93,7 +75,7 @@
     tbody.appendChild(tr);
   });
 
-  // Charts (fixed-height, aligned)
+  // Charts
   const ctx1 = document.getElementById("testsOverviewChart").getContext("2d");
   new Chart(ctx1, {
     type: "doughnut",
@@ -153,6 +135,72 @@
         y: { ticks: { color: "#cfe0f0" }, beginAtZero: true, precision: 0 },
       },
       plugins: { legend: { display: false } },
+      layout: { padding: { top: 6, right: 6, bottom: 6, left: 6 } },
+    },
+  });
+
+  // Risk bubbles (only Probability, Impact, Risk in tooltip)
+  const ctx3 = document.getElementById("riskBubblesChart").getContext("2d");
+  const sevColor = (s) => {
+    const v = String(s || "").toLowerCase();
+    if (v === "high") return "#ef4444";
+    if (v === "medium") return "#f59e0b";
+    return "#19a974";
+  };
+  new Chart(ctx3, {
+    type: "bubble",
+    data: {
+      datasets: [
+        {
+          label: "Risks",
+          data: bubbles.map((b) => ({
+            x: Number(b.probability || 0),
+            y: Number(b.impact || 0),
+            r: Number(b.r || 10),
+          })),
+          backgroundColor: bubbles.map((b) => sevColor(b.risk)),
+          borderWidth: 0,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          min: 0,
+          max: 100,
+          title: {
+            display: true,
+            text: "Failure Probability (%)",
+            color: "#cfe0f0",
+          },
+          ticks: { color: "#cfe0f0" },
+          grid: { color: "rgba(207,224,240,0.08)" },
+        },
+        y: {
+          min: 0,
+          max: 100,
+          title: { display: true, text: "Impact (%)", color: "#cfe0f0" },
+          ticks: { color: "#cfe0f0" },
+          grid: { color: "rgba(207,224,240,0.08)" },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: () => "", // no title
+            label: (ctx) => {
+              const item = bubbles[ctx.dataIndex] || {};
+              const p = Math.round(Number(item.probability || 0));
+              const i = Math.round(Number(item.impact || 0));
+              const risk = (item.risk || "").toString().toUpperCase();
+              return [`Probability: ${p}%`, `Impact: ${i}%`, `Risk: ${risk}`];
+            },
+          },
+        },
+      },
       layout: { padding: { top: 6, right: 6, bottom: 6, left: 6 } },
     },
   });

@@ -1,13 +1,12 @@
 :root {
-  /* Dark + soft blue palette */
   --bg: #0c1117;
   --card: #111827;
   --muted: #99a9bf;
   --text: #e6eef6;
-  --accent: #3b82f6; /* primary blue */
-  --ok: #19a974; /* passed */
-  --warn: #f59e0b; /* skipped */
-  --err: #ef4444; /* failed */
+  --accent: #3b82f6;
+  --ok: #19a974;
+  --warn: #f59e0b;
+  --err: #ef4444;
   --sep: #1f2a37;
   --chip-bg: #0f172a;
 }
@@ -34,7 +33,6 @@ body {
   padding: 24px;
 }
 
-/* Header with inline meta */
 .header {
   display: flex;
   align-items: center;
@@ -80,7 +78,6 @@ body {
   cursor: pointer;
 }
 
-/* Cards & layout */
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -114,7 +111,6 @@ body {
   font-size: 12px;
 }
 
-/* KPI strip — compact */
 .card--kpis {
   min-height: auto;
   padding: 12px;
@@ -151,7 +147,6 @@ body {
   color: var(--warn);
 }
 
-/* Chart areas — fixed height for perfect alignment */
 .chart-area {
   margin-top: auto;
   height: 260px;
@@ -165,7 +160,14 @@ body {
   margin-top: auto;
 }
 
-/* Tables */
+.grid--equal .card {
+  min-height: 420px;
+}
+.table-wrap--scroll {
+  max-height: 320px;
+  overflow: auto;
+}
+
 .table-wrap {
   width: 100%;
   overflow: auto;
@@ -201,27 +203,6 @@ body {
   border-color: #22344a;
 }
 
-/* Compact variant for Insights/Risks */
-.table-compact th,
-.table-compact td {
-  font-size: 12px;
-}
-
-/* Risk level coloring */
-.risk.high {
-  color: var(--err);
-  font-weight: 700;
-}
-.risk.medium {
-  color: var(--warn);
-  font-weight: 700;
-}
-.risk.low {
-  color: var(--ok);
-  font-weight: 700;
-}
-
-/* Fix badges in failures table */
 .fix-list {
   display: flex;
   flex-direction: column;
@@ -237,13 +218,15 @@ body {
   font-size: 12px;
 }
 
-/* Responsive */
 @media (max-width: 960px) {
   .grid {
     grid-template-columns: 1fr;
   }
   .kpis {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .grid--equal .card {
+    min-height: 360px;
   }
 }
 
