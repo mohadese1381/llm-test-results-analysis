@@ -1,0 +1,43 @@
+[project]
+name = "failtrace-app"
+version = "0.1.0"
+description = "Leveraging Large Language Models for Automated Test Results Analysis"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12"
+authors = [
+  { name = "Mohadese Akhoondy", email = "m.akhoondy1381@gmail.com" }
+]
+keywords = ["cli", "testing", "llm", "analysis"]
+classifiers = [
+  "Environment :: Console",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent"
+]
+dependencies = [
+    "rich (>=14.1.0,<15.0.0)",
+    "libcst (>=1.8.2,<2.0.0)",
+    "networkx (>=3.5,<4.0)",
+    "pycg (>=0.0.8,<0.0.9)",
+    "tree-sitter-c-sharp (==0.23.1)",
+    "pytest (>=8.4.1,<9.0.0)",
+    "pytest-json-report (>=1.5.0,<2.0.0)",
+    "mypy (>=1.17.1,<2.0.0)",
+    "pylint (>=3.3.8,<4.0.0)",
+    "pyvis (>=0.3.2,<0.4.0)",
+    "requests (>=2.32.4,<3.0.0)",
+    "openai (>=1.99.9,<2.0.0)",
+    "javalang (>=0.13.0,<0.14.0)",
+    "tree-sitter (>=0.25.1,<0.26.0)",
+]
+
+[project.scripts]
+failtrace = "failtrace_app.cli.main:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+packages = [{ include = "failtrace_app" }]
