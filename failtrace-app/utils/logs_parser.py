@@ -374,7 +374,6 @@ class JUnitXMLParser(TestLogParser):
         tree = ET.parse(log_path)
         root = tree.getroot()
 
-        # Strip namespaces
         for el in root.iter():
             if isinstance(el.tag, str) and el.tag.startswith("{"):
                 el.tag = re.sub(r"^\{.*?\}", "", el.tag)
@@ -386,22 +385,33 @@ class JUnitXMLParser(TestLogParser):
             fullname = f"{classname}::{testname}" if classname else testname
 
             status = "passed"
-            message = ""
+            message_parts: List[str] = []
+
             for child in list(tc):
                 tag = child.tag.lower()
                 if tag in ("failure", "error"):
                     status = "failed"
-                    # استخراج پیام از ویژگی message یا متن داخلی
-                    message = child.get("message", "")
-                    if not message:  # اگر ویژگی خالی بود، متن داخلی را بررسی کن
-                        message = (child.text or "").strip()
+                    if child.get("message"):
+                        message_parts.append(child.get("message", ""))
+                    if child.text:
+                        message_parts.append(child.text.strip())
+                    msg_el = child.find("message") or child.find(".//message")
+                    if msg_el is not None:
+                        if msg_el.get("message"):
+                            message_parts.append(msg_el.get("message", ""))
+                        if msg_el.text:
+                            message_parts.append(msg_el.text.strip())
                     break
                 if tag == "skipped":
                     status = "skipped"
-                    message = child.get("message", (child.text or "").strip())
+                    if child.get("message"):
+                        message_parts.append(child.get("message", ""))
+                    if child.text:
+                        message_parts.append(child.text.strip())
                     break
 
-            out.append({"name": fullname, "status": status, "message": message})
+            full_message = _clean_text("\n".join(m for m in message_parts if m).strip())
+            out.append({"name": fullname, "status": status, "message": full_message})
 
         return out
 

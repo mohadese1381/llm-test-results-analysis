@@ -11,16 +11,20 @@ class PromptGenerator:
 
     _SYSTEM = (
         "You are an expert software QA/SE assistant. Analyze failed tests across Python/Java/C# projects, "
-        "using the provided test summary, critical call paths, and code snippets. "
+        "using the provided test summary, critical call paths, hotspots, and function snippets. "
         "Do rigorous internal reasoning but DO NOT reveal chain-of-thought. "
         "Output only the final JSON that follows the required schema. "
         "Explain root causes in detail, suggest fixes, and provide evidence-based rationale. "
         "For each failed test, you MUST provide a concise `failure_type`. "
         "Prefer the simple exception name without package/namespace (e.g., AssertionError, AttributeError, "
         "NullPointerException). If no clear exception, choose a short category like: Timeout, Network, "
-        "Configuration, Mocking, DataMismatch, Resource, Flaky, Other."
+        "Configuration, Mocking, DataMismatch, Resource, Flaky, Other. "
+        "Additionally, for each failed test, provide concise `insight_bullets` (2–4 short bullets) that describe "
+        "the aggregated/organizational impact if similar failures persist (e.g., stability, lead time, risk to release, "
+        "tech debt hotspots). Keep them high-signal, non-generic, and consistent with severity/failure_type/context."
     )
 
+    # ── NEW: schema includes `insight_bullets` per test ──────────────────────────
     _OUTPUT_SCHEMA = {
         "analysis": [
             {
@@ -36,6 +40,7 @@ class PromptGenerator:
                 "severity": "<low|medium|high>",
                 "suggested_fixes": ["<actionable fix 1>", "<actionable fix 2>"],
                 "rationale": ["<very short bullets, no CoT>", "..."],
+                "insight_bullets": ["<impact bullet 1>", "<impact bullet 2>", "..."],
             }
         ]
     }
@@ -72,12 +77,13 @@ class PromptGenerator:
             f"{self._SYSTEM}\n"
             "Your tasks:\n"
             "1) Identify which tests failed and what the exact error messages are.\n"
-            "2) Map failures to project areas using the provided critical paths.\n"
-            "3) Produce a concise root-cause analysis per failed test.\n"
+            "2) Map failures to project areas using the provided critical paths and hotspots.\n"
+            "3) Produce a precise multi-sentence explanation for root-cause analysis per failed test.\n"
             "4) Propose concrete fixes (code-level and/or config/integration).\n"
             "5) If signals suggest flaky/environmental issues, state it explicitly.\n"
             "6) Set `failure_type` to a SHORT normalized label (exception simple name or category). "
-            "Examples: AssertionError, AttributeError, NullPointerException, Timeout, Network, Configuration, Mocking, Other.\n"
+            "Examples: AssertionError, AttributeError, NullPointerException, Timeout, Network, Configuration, Mocking, DataMismatch, Other.\n"
+            "7) Provide `insight_bullets` (2–4 short bullets) per test about project-level impact and why it matters.\n"
             "Do not include chain-of-thought or step-by-step reasoning in the output; only final JSON."
         )
 
@@ -115,7 +121,6 @@ class PromptGenerator:
                     seq = " → ".join(n.get("node", "?") for n in path)
                     out.append(f"  • {seq}")
 
-        # اگر hotspots موجود بود، برای locus راهنما بده
         hs = self._data.get("hotspots") or {}
         if hs:
             out.append("\nHOTSPOTS (locus hints):")
@@ -160,6 +165,6 @@ class PromptGenerator:
         return (
             "RESPONSE FORMAT:\n"
             "Return JSON only. Do not add commentary, markdown fences or chain-of-thought. "
-            "Keep `rationale` to ≤3 short bullets.\n"
+            "Keep `rationale` to ≤3 short bullets; keep `insight_bullets` to 2–4 concise bullets.\n"
             f"Schema:\n{schema}"
         )

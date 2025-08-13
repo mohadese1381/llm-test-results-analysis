@@ -4,6 +4,7 @@ import networkx as nx
 from typing import List, Dict
 from utils.normalize import normalize_test_name
 from utils.logs_parser import TestLogParser
+from analysis.locator import locate_from_error  # ✅ اضافه شد
 
 # الگوی حذف ANSI escape sequences (واقعی و escape شده در JSON)
 ANSI_PATTERN = re.compile(r"(?:\x1B|\#x1B)\[[0-9;]*[A-Za-z]")
@@ -109,7 +110,17 @@ def tag_graph_with_logs(
         if matched_node:
             graph.nodes[matched_node]["test_status"] = status
             if message:
-                graph.nodes[matched_node]["error_message"] = message
+                # ✅ حذف ANSI قبل از ذخیره
+                clean_msg = _strip_ansi(message)
+                graph.nodes[matched_node]["error_message"] = clean_msg
+
+                # ✅ مکان‌یابی هیورستیک و ذخیره
+                heur = locate_from_error(clean_msg, lang_lc)
+                graph.nodes[matched_node]["heuristic_locations"] = heur.get(
+                    "heuristic", []
+                )
+                graph.nodes[matched_node]["raw_locations"] = heur.get("raw_paths", [])
+
             matched += 1
         else:
             unmatched.append(raw_name)

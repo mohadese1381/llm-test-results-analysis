@@ -21,6 +21,50 @@
 
   const uniq = (arr) => Array.from(new Set(arr || []));
 
+  // نام تست تمیز برای Insights (بدون مسیر)
+  const cleanTestTitle = (s) => {
+    const str = String(s || "").trim();
+    if (!str) return "";
+    // ترجیح: جداکنندهٔ pytest/نودها
+    const byDblColon = str.split("::");
+    let last = byDblColon[byDblColon.length - 1] || str;
+
+    // اگر هنوز مسیر داشت، آخرین بخش مسیر/دات را بگیر
+    if (last.includes("/") || last.includes("\\") || last.includes(">")) {
+      const tmp = last.replace(/\\/g, "/").split("/");
+      last = tmp[tmp.length - 1] || last;
+    }
+    if (last.includes(".")) {
+      const tmp = last.split(".");
+      last = tmp[tmp.length - 1] || last;
+    }
+    // پارام‌ترهای pytest را به‌صورت خوانا نگه دار
+    return last.trim();
+  };
+
+  // به بولت تبدیل‌کردن detail در صورت نیاز
+  const toBullets = (detail) => {
+    if (Array.isArray(detail)) {
+      return detail.map((x) => String(x || "").trim()).filter(Boolean);
+    }
+    const s = String(detail || "").trim();
+    if (!s) return [];
+    // اگر خطوط متعدد یا نشانه‌های بولت دارد، تجزیه‌شان کن
+    const lines = s
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (lines.length > 1) return lines;
+    // یک خطه: اگر شامل «•» یا «-»های جداکننده باشد، اسپلیت کن
+    const parts = s
+      .split(/(?:\s*•\s*|\s*-\s*)/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+    if (parts.length > 1) return parts;
+    // در غیر این‌صورت، همان متن تک‌آیتم
+    return [s];
+  };
+
   // Header
   document.getElementById("projName").textContent = proj.name || "—";
   document.getElementById("runDate").textContent = proj.date || "";
@@ -34,14 +78,30 @@
   document.getElementById("kSkipped").textContent =
     t.skipped ?? metrics.skipped ?? 0;
 
-  // Insights table
+  // Insights table (نام تمیز + بولت‌های اثر)
   const insTBody = document.querySelector("#insightsTable tbody");
   insights.forEach((x) => {
     const tr = document.createElement("tr");
+
     const td1 = document.createElement("td");
-    td1.textContent = x.title || "";
+    td1.textContent = cleanTestTitle(x.title || "");
+
     const td2 = document.createElement("td");
-    td2.textContent = x.detail || "";
+    const bullets = toBullets(x.detail);
+    if (bullets.length > 1) {
+      const ul = document.createElement("ul");
+      ul.style.margin = "0";
+      ul.style.paddingInlineStart = "18px";
+      bullets.forEach((b) => {
+        const li = document.createElement("li");
+        li.textContent = b;
+        ul.appendChild(li);
+      });
+      td2.appendChild(ul);
+    } else {
+      td2.textContent = bullets[0] || "";
+    }
+
     tr.append(td1, td2);
     insTBody.appendChild(tr);
   });
@@ -63,24 +123,108 @@
       fixesWrap.appendChild(tag);
     });
 
-    // Location: ترجیح توابع (به‌عنوان پیشنهاد) و سپس location/file
-    let locParts = [];
-    if (Array.isArray(item.functions) && item.functions.length) {
-      locParts.push("Suggested: " + toPretty(uniq(item.functions).join(", ")));
+    // لایه‌های Location (اولویت بر اساس ارزش/دقت):
+    // ۱) نزدیک‌ترین به گراف (دقیق‌تر) ۲) سرنخ‌های قطعی از متن خطا ۳) پیشنهاد LLM
+    const layers = item.location_layers || {};
+    const lHeu = Array.isArray(layers.heuristic) ? layers.heuristic : [];
+    const lGraph = Array.isArray(layers.graph_ranked)
+      ? layers.graph_ranked
+      : [];
+    const lLlm = Array.isArray(layers.llm) ? layers.llm : [];
+
+    // سازگاری قدیم
+    let fallbackLocText = "";
+    if (!layers || (!lHeu.length && !lGraph.length && !lLlm.length)) {
+      let locParts = [];
+      if (Array.isArray(item.functions) && item.functions.length) {
+        locParts.push("پیشنهادی: " + toPretty(uniq(item.functions).join(", ")));
+      }
+      if (item.location) {
+        locParts.push(toPretty(item.location));
+      } else if (item.file) {
+        locParts.push(toPretty(item.file));
+      }
+      fallbackLocText = locParts.join("  |  ");
     }
-    if (item.location) {
-      locParts.push(toPretty(item.location));
-    } else if (item.file) {
-      locParts.push(toPretty(item.file));
-    }
-    const locationText = locParts.join("  |  ");
 
     const tdTest = document.createElement("td");
     tdTest.textContent = item.title || "";
     const tdRoot = document.createElement("td");
     tdRoot.textContent = item.root_cause || "";
+
     const tdLoc = document.createElement("td");
-    tdLoc.textContent = locationText;
+    if (fallbackLocText) {
+      tdLoc.textContent = fallbackLocText;
+    } else {
+      // رندر چندلایه با برچسبِ اولویت و تمایز بصری
+      const block = document.createElement("div");
+      block.style.display = "flex";
+      block.style.flexDirection = "column";
+      block.style.gap = "6px";
+
+      const makeLayer = (priority, label, arr, color) => {
+        if (!arr || !arr.length) return null;
+        const wrap = document.createElement("div");
+        wrap.style.border = `1px solid ${color}`;
+        wrap.style.borderRadius = "8px";
+        wrap.style.padding = "6px 8px";
+
+        const title = document.createElement("div");
+        title.style.display = "flex";
+        title.style.alignItems = "center";
+        title.style.gap = "8px";
+        title.style.marginBottom = "6px";
+
+        const badge = document.createElement("span");
+        badge.textContent = `اولویت ${priority}`;
+        badge.style.fontSize = "11px";
+        badge.style.padding = "2px 6px";
+        badge.style.border = `1px solid ${color}`;
+        badge.style.borderRadius = "6px";
+        badge.style.opacity = "0.9";
+
+        const txt = document.createElement("span");
+        txt.textContent = label;
+        txt.style.fontSize = "12px";
+        txt.style.opacity = "0.85";
+
+        title.appendChild(badge);
+        title.appendChild(txt);
+
+        const list = document.createElement("div");
+        list.style.display = "flex";
+        list.style.flexDirection = "column";
+        list.style.gap = "4px";
+
+        arr.forEach((s) => {
+          const line = document.createElement("div");
+          line.textContent = toPretty(String(s || ""));
+          line.style.fontSize = "12px";
+          list.appendChild(line);
+        });
+
+        wrap.appendChild(title);
+        wrap.appendChild(list);
+        return wrap;
+      };
+
+      // عناوین فارسیِ مبتنی بر ارزش/دقت
+      // Graph-ranked = «نزدیک‌ترین به گراف (دقیق‌تر)»
+      // Heuristic = «سرنخ‌های قطعی از متن خطا»
+      // LLM = «پیشنهاد LLM»
+      const gBlock = makeLayer(
+        1,
+        "نزدیک‌ترین به گراف (دقیق‌تر)",
+        lGraph,
+        "#60a5fa"
+      );
+      const hBlock = makeLayer(2, "سرنخ‌های قطعی از متن خطا", lHeu, "#34d399");
+      const lBlock = makeLayer(3, "پیشنهاد LLM", lLlm, "#f59e0b");
+
+      [gBlock, hBlock, lBlock].forEach((el) => el && block.appendChild(el));
+      tdLoc.appendChild(block);
+    }
+
     const tdErr = document.createElement("td");
     tdErr.textContent = item.message || "";
     const tdFix = document.createElement("td");
@@ -92,13 +236,15 @@
 
   // تا ۴ ردیف، بدون اسکرول؛ بیشتر شد اسکرول فعال شود (فقط همین کارت)
   const failWrap = document.getElementById("failWrap");
-  const failRows = tbody.querySelectorAll("tr").length;
-  if (failRows <= 4) {
-    failWrap.classList.remove("table-wrap--fail-scroll");
-    failWrap.classList.add("table-wrap--fail-auto");
-  } else {
-    failWrap.classList.remove("table-wrap--fail-auto");
-    failWrap.classList.add("table-wrap--fail-scroll");
+  if (failWrap) {
+    const failRows = tbody.querySelectorAll("tr").length;
+    if (failRows <= 4) {
+      failWrap.classList.remove("table-wrap--fail-scroll");
+      failWrap.classList.add("table-wrap--fail-auto");
+    } else {
+      failWrap.classList.remove("table-wrap--fail-auto");
+      failWrap.classList.add("table-wrap--fail-scroll");
+    }
   }
 
   // Charts
@@ -165,14 +311,17 @@
     },
   });
 
-  // Risk bubbles
-  // ثبات نمایش: مرتب‌سازی پایدار بر اساس نام تست
+  // Risk bubbles: ثابت و خواناتر؛ رفع بد-نمایی حباب زرد
+  // - رادیوس را clamp می‌کنیم تا حباب‌ها دفرمه نشوند.
+  // - حاشیه‌ی ظریف به هر حباب می‌دهیم تا زرد بهتر دیده شود.
   bubbles = bubbles
     .slice()
     .map((b) => {
       const parts = String(b.test_name || "").split("::");
       const onlyMethod = parts.length ? parts[parts.length - 1] : "";
-      return { ...b, __name: onlyMethod };
+      // clamp radius برای خوانایی بهتر
+      const rr = Math.max(8, Math.min(Number(b.r || 10), 18));
+      return { ...b, __name: onlyMethod, _r: rr };
     })
     .sort((a, b) => a.__name.localeCompare(b.__name));
 
@@ -180,8 +329,14 @@
   const sevColor = (s) => {
     const v = String(s || "").toLowerCase();
     if (v === "high") return "#ef4444";
-    if (v === "medium") return "#f59e0b";
+    if (v === "medium") return "#f59e0b"; // زرد
     return "#19a974";
+  };
+  const sevBorder = (s) => {
+    const v = String(s || "").toLowerCase();
+    if (v === "high") return "rgba(239,68,68,0.9)";
+    if (v === "medium") return "rgba(245,158,11,0.95)"; // حاشیه‌ی واضح‌تر برای زرد
+    return "rgba(25,169,116,0.9)";
   };
 
   new Chart(ctx3, {
@@ -192,10 +347,11 @@
           data: bubbles.map((b) => ({
             x: Number(b.probability || 0),
             y: Number(b.impact || 0),
-            r: Number(b.r || 10),
+            r: Number(b._r || 10),
           })),
           backgroundColor: bubbles.map((b) => sevColor(b.risk)),
-          borderWidth: 0,
+          borderColor: bubbles.map((b) => sevBorder(b.risk)),
+          borderWidth: 1, // برای خوانایی بهتر مخصوصاً رنگ زرد
         },
       ],
     },
@@ -226,7 +382,6 @@
         legend: { display: false },
         tooltip: {
           callbacks: {
-            // نام تست (فقط نام متد) در بالای تول‌کیت + سه پارامتر
             title: (ctx) => {
               const idx = ctx[0]?.dataIndex ?? 0;
               return bubbles[idx]?.__name || "";

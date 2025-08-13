@@ -166,7 +166,7 @@ body {
 }
 
 .table-wrap--fail-scroll {
-  max-height: calc(6 * 85 + 42px); 
+  max-height: calc(4 * 85 + 42px); 
   overflow: auto;
 }
 .table-wrap--fail-auto {
