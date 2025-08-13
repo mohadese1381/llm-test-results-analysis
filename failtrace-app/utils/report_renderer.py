@@ -5,13 +5,11 @@ import json
 from collections import Counter
 from typing import Dict, List, Tuple
 import re
+import hashlib
 
 
 class ReportBuildError(RuntimeError):
     pass
-
-
-# ---------- IO & parsing ----------
 
 
 def _read_json(p: Path) -> dict:
@@ -33,7 +31,7 @@ def _extract_first_json_block(text: str) -> dict | None:
         elif ch == "}":
             stack -= 1
             if stack == 0 and start != -1:
-                blob = text[start : i + 1]
+                blob = text[start: i + 1]
                 try:
                     return json.loads(blob)
                 except Exception:
@@ -53,9 +51,6 @@ def _load_llm_analysis(out_dir: Path) -> dict:
     return _extract_first_json_block(raw) or {}
 
 
-# ---------- Charts / metrics ----------
-
-
 def _build_tests_overview(summary: dict) -> dict:
     return {
         "passed": int(summary.get("passed_tests", 0) or 0),
@@ -70,7 +65,6 @@ def _failure_types_from_summary(summary: dict) -> List[dict]:
     return [{"type": t, "count": c} for t, c in counts.most_common()]
 
 
-# --- normalize failure type for grouping
 def _norm_failure_type(s: str) -> str:
     if not s:
         return ""
@@ -108,29 +102,25 @@ def _failure_types_from_llm(llm: dict) -> List[dict]:
     return [{"type": t, "count": c} for t, c in bucket.most_common()]
 
 
-# ---- RISK BUBBLES ----
-_SEV_IMPACT = {"low": 30, "medium": 65, "high": 90}  # Y axis
-_SEV_BOOST = {"low": 0.05, "medium": 0.10, "high": 0.20}  # added to base prob
+_SEV_IMPACT = {"low": 30, "medium": 65, "high": 90}
+_SEV_BOOST = {"low": 0.05, "medium": 0.10, "high": 0.20}
 
 
 def _clamp(v: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, v))
 
 
+def _stable_hash(val: str) -> float:
+    """Generate stable pseudo-random float [0,1) based on string hash."""
+    h = hashlib.md5(val.encode("utf-8")).hexdigest()
+    return int(h[:8], 16) / 0xFFFFFFFF
+
+
 def _build_risk_bubbles(llm: dict, funcs: dict) -> List[dict]:
-    """
-    For each failed test in LLM analysis produce:
-      - probability (%): base frequency of its failure_type + severity boost
-      - impact (%): mapped from severity (low=30, medium=65, high=90)
-      - r: bubble radius (UI only) = clamp(8 + 2*len(call_path), 8, 22)
-      - risk: severity (low/medium/high)
-    Tooltip in UI shows only probability/impact/risk.
-    """
     if not isinstance(llm, dict) or not llm.get("analysis"):
         return []
 
     items: List[dict] = llm["analysis"]
-    # frequency by normalized failure type
     types: List[str] = []
     for it in items:
         ft = _norm_failure_type((it.get("failure_type") or "").strip())
@@ -147,22 +137,29 @@ def _build_risk_bubbles(llm: dict, funcs: dict) -> List[dict]:
         sev = (it.get("severity") or "").strip().lower()
         sev = sev if sev in {"low", "medium", "high"} else "medium"
 
-        # base probability from type frequency
         ft = _norm_failure_type((it.get("failure_type") or "").strip())
         if not ft:
             err = (it.get("error") or "").strip()
             head = err.split(":", 1)[0] if ":" in err else err
             ft = _norm_failure_type(head)
+
+        sig = f"{it.get('test_name','')}::{ft}"
+        stable_factor = _stable_hash(sig) * 0.02
         base = freq.get(ft or "Other", 0) / total
-        prob = _clamp(base + _SEV_BOOST[sev], 0.0, 1.0) * 100.0
+        prob = _clamp(base + _SEV_BOOST[sev] + stable_factor, 0.0, 1.0) * 100.0
 
         impact = float(_SEV_IMPACT[sev])
-
         path_len = len(it.get("call_path") or [])
         r = _clamp(8 + 2 * path_len, 8, 22)
 
         bubbles.append(
-            {"probability": round(prob, 2), "impact": impact, "r": r, "risk": sev}
+            {
+                "probability": round(prob, 2),
+                "impact": impact,
+                "r": r,
+                "risk": sev,
+                "test_name": it.get("test_name", "")
+            }
         )
     return bubbles
 
@@ -175,9 +172,6 @@ def _build_charts_data(summary: dict, llm: dict, funcs: dict) -> dict:
         "failureTypes": ft_llm or ft_sum,
         "riskBubbles": _build_risk_bubbles(llm, funcs),
     }
-
-
-# ---------- Locations (file:line) ----------
 
 
 def _line_lookup(funcs_json: dict) -> Dict[str, int]:
@@ -198,13 +192,13 @@ def _locations_from_locus(locus: dict, lines_map: Dict[str, int]) -> List[str]:
         ln = int(lines_map.get(fn, 0) or 0)
         file_part = fn.split("::", 1)[0] if "::" in fn else ""
         if file_part and ln:
-            locs.append(f"{file_part}:{ln}")
+            locs.append(f"{file_part}>{ln}")
         elif file_part:
             locs.append(file_part)
     if not locs:
         for f in locus.get("files", []) or []:
             if f:
-                locs.append(f)
+                locs.append(f.replace("/", ">").replace("::", ">"))
     seen = set()
     uniq: List[str] = []
     for s in locs:
@@ -212,9 +206,6 @@ def _locations_from_locus(locus: dict, lines_map: Dict[str, int]) -> List[str]:
             seen.add(s)
             uniq.append(s)
     return uniq
-
-
-# ---------- Insights / Failures ----------
 
 
 def _normalize_cause(txt: str) -> str:
@@ -230,7 +221,7 @@ def _insights_and_risks_from_llm(
     llm: dict, failed_count: int
 ) -> Tuple[List[dict], List[dict]]:
     insights: List[dict] = []
-    risks: List[dict] = []  # kept for backward compatibility (unused in UI)
+    risks: List[dict] = []
 
     if isinstance(llm, dict) and llm.get("analysis"):
         items: List[dict] = llm["analysis"]
@@ -244,8 +235,6 @@ def _insights_and_risks_from_llm(
                 groups[key] = {
                     "title": rc_raw or (it.get("error") or "Unspecified cause"),
                     "tests": [],
-                    "files": Counter(),
-                    "funcs": Counter(),
                 }
             g = groups[key]
             tn = (it.get("test_name") or "").strip()
@@ -275,6 +264,7 @@ def _failures_table(summary: dict, llm: dict, funcs: dict) -> List[dict]:
             locus = it.get("locus") or {}
             files = locus.get("files", []) or []
             functions = locus.get("functions", []) or []
+            suggested_funcs = list(set(functions + list(funcs.keys())))
             locations = _locations_from_locus(locus, lines_map)
             rows.append(
                 {
@@ -286,7 +276,7 @@ def _failures_table(summary: dict, llm: dict, funcs: dict) -> List[dict]:
                     "severity": it.get("severity") or "",
                     "file": ", ".join(files) if files else "",
                     "location": ", ".join(locations) if locations else "",
-                    "functions": functions,
+                    "functions": suggested_funcs,
                     "suggested_fixes": it.get("suggested_fixes") or [],
                 }
             )
@@ -307,9 +297,6 @@ def _failures_table(summary: dict, llm: dict, funcs: dict) -> List[dict]:
             }
         )
     return rows
-
-
-# ---------- Report assembly ----------
 
 
 def _build_report_json(project_path: Path, out_dir: Path) -> dict:
@@ -338,13 +325,10 @@ def _build_report_json(project_path: Path, out_dir: Path) -> dict:
         "project": {"name": proj_name, "date": datetime.now().date().isoformat()},
         "metrics": metrics,
         "insights": insights,
-        "risks": risks,  # kept for backward compat (UI ignores)
+        "risks": risks,
         "failures": failures,
         "charts": charts,
     }
-
-
-# ---------- HTML rendering ----------
 
 
 def render_report_html(project_path: str, out_dir: str, template_path: str) -> str:

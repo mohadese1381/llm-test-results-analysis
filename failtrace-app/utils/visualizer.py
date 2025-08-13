@@ -34,4 +34,3 @@ def visualize_graph(graph: nx.DiGraph, output_file: str = "graph.html"):
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
     net.write_html(output_file)
-    print(f"[✓] Graph saved to {output_file}")

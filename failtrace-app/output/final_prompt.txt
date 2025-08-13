@@ -1,4 +1,4 @@
-You are an expert software QA/SE assistant. Analyze failed tests across Python/Java/C# projects, using the provided test summary, critical call paths, and code snippets. Perform internal step-by-step reasoning but DO NOT reveal chain-of-thought. Output only the final JSON that follows the required schema. Explain root causes in detail, suggest fixes, and provide evidence-based rationale. For each failed test, you MUST provide a concise `failure_type`. Prefer the simple exception name without package/namespace (e.g., AssertionError, AttributeError, NullPointerException). If no clear exception, choose a short category like: Timeout, Network, Configuration, Mocking, DataMismatch, Resource, Flaky, Other.
+You are an expert software QA/SE assistant. Analyze failed tests across Python/Java/C# projects, using the provided test summary, critical call paths, and code snippets. Do rigorous internal reasoning but DO NOT reveal chain-of-thought. Output only the final JSON that follows the required schema. Explain root causes in detail, suggest fixes, and provide evidence-based rationale. For each failed test, you MUST provide a concise `failure_type`. Prefer the simple exception name without package/namespace (e.g., AssertionError, AttributeError, NullPointerException). If no clear exception, choose a short category like: Timeout, Network, Configuration, Mocking, DataMismatch, Resource, Flaky, Other.
 Your tasks:
 1) Identify which tests failed and what the exact error messages are.
 2) Map failures to project areas using the provided critical paths.
@@ -13,15 +13,15 @@ TEST SUMMARY:
 - Failures:
   • tests/smoke/test_basic.py::test_will_fail: AssertionError: Function should return double of the value
 assert 2 == 4
-  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error: AssertionError: #x1B[93m
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error: AssertionError: 
 
-assert_expectations() called at#x1B[0m
-#x1B[4m#x1B[94m"C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:13"#x1B[0m#x1B[93m in test_delayed_response_with_error()
+assert_expectations() called at
+"C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:13" in test_delayed_response_with_error()
 
-#x1B[91m#x1B[4mFailed Expectations : 1
-#x1B[0m
-1: #x1B[91mFailed at "#x1B[0m#x1B[94m#x1B[4mC:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12#x1B[0m#x1B[91m", in test_delayed_response_with_error()
-	#x1B[1m#x1B[4mErrorMessage:#x1B[0m#x1B[91m	{"key": "value"}#x1B[0m
+Failed Expectations : 1
+
+1: Failed at "C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12", in test_delayed_response_with_error()
+	ErrorMessage:	{"key": "value"}
     expect(response.json() == {}, response.text)
   • tests/unit/test_mocks.py::test_mock_patching: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
   • tests/unit/test_mocks.py::test_mock_side_effect: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
@@ -33,42 +33,46 @@ Error: AssertionError: Function should return double of the value
 assert 2 == 4
 Downstream:
   • tests/smoke/test_basic.py::test_will_fail → source/sut.py::SystemUnderTest::function
-  • tests/smoke/test_basic.py::test_will_fail → source/sut.py::SystemUnderTest::function
-  • tests/smoke/test_basic.py::test_will_fail → source/sut.py::SystemUnderTest::function
-  • tests/smoke/test_basic.py::test_will_fail
+  • tests/smoke/test_basic.py::test_will_fail → SystemUnderTest
 
 Test: tests/unit/test_delayed_assert.py::test_delayed_response_with_error
-Error: AssertionError: #x1B[93m
+Error: AssertionError: 
 
-assert_expectations() called at#x1B[0m
-#x1B[4m#x1B[94m"C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:13"#x1B[0m#x1B[93m in test_delayed_response_with_error()
+assert_expectations() called at
+"C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:13" in test_delayed_response_with_error()
 
-#x1B[91m#x1B[4mFailed Expectations : 1
-#x1B[0m
-1: #x1B[91mFailed at "#x1B[0m#x1B[94m#x1B[4mC:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12#x1B[0m#x1B[91m", in test_delayed_response_with_error()
-	#x1B[1m#x1B[4mErrorMessage:#x1B[0m#x1B[91m	{"key": "value"}#x1B[0m
+Failed Expectations : 1
+
+1: Failed at "C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12", in test_delayed_response_with_error()
+	ErrorMessage:	{"key": "value"}
     expect(response.json() == {}, response.text)
 Downstream:
-  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
-  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
-  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
-  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error → expect
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error → assert_expectations
 
 Test: tests/unit/test_mocks.py::test_mock_patching
 Error: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
 Downstream:
-  • tests/unit/test_mocks.py::test_mock_patching
-  • tests/unit/test_mocks.py::test_mock_patching
-  • tests/unit/test_mocks.py::test_mock_patching
+  • tests/unit/test_mocks.py::test_mock_patching → called_once
 
 Test: tests/unit/test_mocks.py::test_mock_side_effect
 Error: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
 Downstream:
-  • tests/unit/test_mocks.py::test_mock_side_effect
-  • tests/unit/test_mocks.py::test_mock_side_effect
-  • tests/unit/test_mocks.py::test_mock_side_effect
-  • tests/unit/test_mocks.py::test_mock_side_effect
-  • tests/unit/test_mocks.py::test_mock_side_effect
+  • tests/unit/test_mocks.py::test_mock_side_effect → called_once
+
+HOTSPOTS (locus hints):
+- tests/smoke/test_basic.py::test_will_fail
+  functions: source/sut.py::SystemUnderTest::function
+  files: source/sut.py
+- tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+  functions: 
+  files: 
+- tests/unit/test_mocks.py::test_mock_patching
+  functions: 
+  files: 
+- tests/unit/test_mocks.py::test_mock_side_effect
+  functions: 
+  files: 
 
 FUNCTION SNIPPETS (trimmed):
 
@@ -94,7 +98,7 @@ Raises:
             """
         ...
 
-FEW-SHOT EXAMPLES (style only):
+FEW-SHOT EXAMPLES (style only, no chain-of-thought):
 
 INPUT:
 [EXAMPLE — STYLE & STRUCTURE ONLY, DO NOT COPY ASSUMPTIONS]
@@ -137,7 +141,7 @@ OUTPUT:
       "test_name": "tests/test_math.py::test_divide_by_zero",
       "error": "ZeroDivisionError: division by zero",
       "call_path": ["math_utils.py::safe_divide", "math_utils.py::_normalize_inputs"],
-      "reasoning": [
+      "rationale": [
         "1) safe_divide بدون بررسی b==0 مستقیماً a/b را اجرا می‌کند",
         "2) _normalize_inputs فقط None-check دارد و صفر نبودن b را تضمین نمی‌کند",
         "3) مسیر بحرانی وقوع خطا را در safe_divide تایید می‌کند"
@@ -173,15 +177,15 @@ Schema:
           "..."
         ]
       },
-      "failure_type": "<short normalized type, e.g. AssertionError | NullPointerException | Timeout | Other>",
-      "root_cause": "<precise details in at least one sentence to 3 sentences at most>",
+      "failure_type": "<short normalized type, e.g. AssertionError | AttributeError | NullPointerException | Timeout | Network | Configuration | Mocking | DataMismatch | Other>",
+      "root_cause": "<precise multi-sentence explanation>",
       "severity": "<low|medium|high>",
       "suggested_fixes": [
         "<actionable fix 1>",
         "<actionable fix 2>"
       ],
       "rationale": [
-        "<short high-level evidence, no CoT>",
+        "<very short bullets, no CoT>",
         "..."
       ]
     }

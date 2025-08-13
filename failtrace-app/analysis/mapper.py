@@ -5,47 +5,49 @@ from typing import List, Dict
 from utils.normalize import normalize_test_name
 from utils.logs_parser import TestLogParser
 
+# الگوی حذف ANSI escape sequences (واقعی و escape شده در JSON)
+ANSI_PATTERN = re.compile(r"(?:\x1B|\#x1B)\[[0-9;]*[A-Za-z]")
+
+
+def _strip_ansi(text: str) -> str:
+    """حذف سکانس‌های ANSI برای رنگ‌دهی ترمینال."""
+    if not isinstance(text, str):
+        return text
+    return ANSI_PATTERN.sub("", text)
+
 
 def load_test_logs(log_path: str, lang: str) -> List[Dict]:
     """
     بارگذاری لاگ‌های تست برای زبان مشخص (python, java, csharp).
-    با پارسر مناسب (json/xml/trx) خروجی استاندارد  {'name','status','message'} برمی‌گرداند.
+    با پارسر مناسب (json/xml/trx) خروجی استاندارد {'name','status','message'} برمی‌گرداند.
+    اینجا ANSI escape sequences حذف می‌شوند تا در مراحل بعدی وارد نشوند.
     """
     try:
         parser = TestLogParser.get_parser(lang, log_path)
-        return parser.load(log_path)
+        logs = parser.load(log_path)
+        # پاک‌سازی ANSI از همان ابتدا
+        for log in logs:
+            if "message" in log and log["message"]:
+                log["message"] = _strip_ansi(log["message"])
+        return logs
     except Exception as e:
         print(f"[!] Failed to parse test logs ({log_path}): {e}")
         return []
 
 
 def _strip_param_suffix(func_name: str) -> str:
-    """
-    حذف پسوندهای پارامتری از انتهای نام تابع:
-      test_x[zero]           -> test_x
-      test_x[param1-param2]  -> test_x
-      test_x[0][a]           -> test_x
-      test_x(arg1,arg2)      -> test_x   (xUnit/NUnit Theory)
-    """
+    """حذف پسوندهای پارامتری از انتهای نام تابع."""
     if not isinstance(func_name, str):
         return func_name
-    # حذف همه‌ی پسوندهای پشت‌سرهم [...] یا (...)
     return re.sub(r"(?:\[[^\]]*\]|\([^\)]*\))+$", "", func_name)
 
 
 def tag_graph_with_logs(
     graph: nx.DiGraph, test_logs: List[Dict], lang: str
 ) -> nx.DiGraph:
-    """
-    برچسب‌گذاری گره‌های گراف بر اساس لاگ تست‌ها:
-    - تطبیق دقیق نام لاگ با شناسه گره (بعد از normalize)
-    - در صورت عدم تطبیق، تطبیق انتهایی با نام تابع/کلاس+تابع
-    - تنظیم test_status: passed | failed | skipped | not_executed
-    - افزودن error_message برای تست‌های شکست‌خورده
-    """
+    """برچسب‌گذاری گره‌های گراف بر اساس لاگ تست‌ها."""
     matched = 0
     unmatched = []
-
     lang_lc = (lang or "").lower()
 
     for log in test_logs:
@@ -58,7 +60,7 @@ def tag_graph_with_logs(
 
         normalized = normalize_test_name(raw_name, lang_lc)
 
-        # نسخه بدون پسوند پارامتری برای «تطبیق»
+        # نسخه بدون پسوند پارامتری
         parts = normalized.split("::")
         if parts:
             func_original = parts[-1]
@@ -72,37 +74,29 @@ def tag_graph_with_logs(
 
         matched_node = None
 
-        # 1) تطبیق دقیق با نام نرمال‌شده
+        # انواع تطبیق
         if normalized in graph.nodes:
             matched_node = normalized
-
-        # 2) تطبیق دقیق با نسخه بدون پسوند پارامتری
         if matched_node is None and normalized_stripped in graph.nodes:
             matched_node = normalized_stripped
-
-        # 3) تطبیق انتهایی با نام تابع (نسخه اصلی)
         if matched_node is None and func_original:
             for node_id in graph.nodes:
                 if node_id.endswith(f"::{func_original}"):
                     matched_node = node_id
                     break
-
-        # 4) تطبیق انتهایی با نام تابع (نسخه بدون پسوند پارامتری)
         if matched_node is None and func_stripped:
             for node_id in graph.nodes:
                 if node_id.endswith(f"::{func_stripped}"):
                     matched_node = node_id
                     break
-
-        # 5) (NEW) برای #C و Java: سافیکس دقیق '::<Class>::<Method>'
         if matched_node is None and lang_lc in {"csharp", "java"}:
             parts2 = normalized_stripped.split("::")
             if len(parts2) >= 2:
                 maybe_method = parts2[-1]
                 maybe_class = parts2[-2]
                 cand_suffixes = [
-                    f"::{maybe_class}::{maybe_method}",  # دقیق‌ترین
-                    f"::{maybe_method}",  # fallback
+                    f"::{maybe_class}::{maybe_method}",
+                    f"::{maybe_method}",
                 ]
                 for suf in cand_suffixes:
                     for node_id in graph.nodes:
@@ -120,13 +114,8 @@ def tag_graph_with_logs(
         else:
             unmatched.append(raw_name)
 
-    # برچسب‌گذاری تست‌های بدون لاگ
     for node, data in graph.nodes(data=True):
         if data.get("is_test") and "test_status" not in data:
             graph.nodes[node]["test_status"] = "not_executed"
-
-    print(f"⟹ TAGGER: matched={matched}, unmatched={len(unmatched)}")
-    if unmatched:
-        print("   first unmatched:", unmatched[:5])
 
     return graph

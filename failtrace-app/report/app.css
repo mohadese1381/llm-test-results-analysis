@@ -160,6 +160,20 @@ body {
   margin-top: auto;
 }
 
+.card--risk .chart-area {
+  height: 300px;
+  margin-top: 15px;
+}
+
+.table-wrap--fail-scroll {
+  max-height: calc(6 * 85 + 42px); 
+  overflow: auto;
+}
+.table-wrap--fail-auto {
+  max-height: none;
+  overflow: visible;
+}
+
 .grid--equal .card {
   min-height: 420px;
 }

@@ -1,57 +1,132 @@
-from __future__ import annotations
+# --- file: llm/structured_prompt_builder.py ---
 import json
-from pathlib import Path
-from typing import Dict, Optional
-import pickle
-import networkx as nx
+import os
+import math
+from typing import Dict, List, Any, Tuple
 
 from graph.graph_builder import build_graph
+from utils.file_ops import load_json
+from analysis.mapper import load_test_logs, tag_graph_with_logs
 from analysis.summarizer import build_test_summary
 from analysis.critical_path_extractor import find_critical_paths
-from utils.normalize import normalize_test_name
 
 
-class PromptBuildError(RuntimeError):
-    pass
-
-
-def _read_json(p: Path) -> dict:
-    if not p.is_file():
-        return {}
-    return json.loads(p.read_text(encoding="utf-8"))
-
-
-def _load_cached_graph(out_dir: Path) -> Optional[nx.DiGraph]:
-    p = out_dir / "cache" / "graph.pkl"
-    if not p.is_file():
-        return None
-    with open(p, "rb") as f:
-        return pickle.load(f)
-
-
-def _ensure_graph(project_path: str, out_dir: Path) -> nx.DiGraph:
-    g = _load_cached_graph(out_dir)
-    if g is None:
-        g = build_graph(project_path)
-    return g
-
-
-def _apply_failed_from_summary(graph: nx.DiGraph, summary: Dict, lang: str) -> None:
-    failed = [it.get("name", "") for it in summary.get("failed_detail", []) or []]
-    norm = {normalize_test_name(n, lang) for n in failed if n}
-    for nid, data in graph.nodes(data=True):
-        if data.get("is_test"):
-            tail = nid.split("::", 1)[-1]
-            if tail in norm or any(tail.endswith(x) for x in norm):
-                graph.nodes[nid]["test_status"] = "failed"
-
-
-def _err_msg(summary: Dict, test_name: str) -> str:
-    for f in summary.get("failed_detail", []) or []:
-        if f.get("name") == test_name:
-            return f.get("error") or ""
+def get_error_message(summary: Dict, test_name: str) -> str:
+    """
+    پیام خطا را برای نام تستِ شکست‌خورده از summary پیدا می‌کند.
+    """
+    for failed in summary.get("failed_detail", []):
+        if failed.get("name") == test_name:
+            return failed.get("error", "")
     return ""
 
+
+# ────────────────────── Dynamic k helpers ──────────────────────
+
+def _compute_base_k(num_nodes: int) -> int:
+    """
+    k پایه بر اساس اندازهٔ پروژه (monotonic و نرم):
+      base_k ∈ [3..12]
+      base_k = 3 + floor(9 * log(1+n)/log(1+1200))
+    """
+    if num_nodes <= 0:
+        return 3
+    denom = math.log1p(1200.0)
+    ratio = math.log1p(float(num_nodes)) / denom
+    base = 3 + int(math.floor(9.0 * max(0.0, min(1.0, ratio))))
+    return max(3, min(12, base))
+
+
+def _compute_alpha(num_nodes: int, num_edges: int) -> float:
+    """
+    α از چگالی مؤثر گراف می‌آید: avg out-degree = E/N
+    نگاشت خطی با کَپ روی بازهٔ [0..8]:
+        alpha = 0.55 + 0.30 * min(1, (E/N)/8)
+    """
+    if num_nodes <= 0:
+        return 0.7
+    avg_out = (float(num_edges) / float(num_nodes)) if num_nodes else 0.0
+    t = min(1.0, max(0.0, avg_out / 8.0))
+    return 0.55 + 0.30 * t
+
+
+def _k_for_test(unique_loci_count: int, base_k: int, alpha: float) -> int:
+    """
+    k اختصاصی هر تست: کوچک‌تر از base_k ولی متناسب با تعداد نقاط داغ یکتا.
+    """
+    if unique_loci_count <= 0:
+        return 0
+    return min(base_k, max(3, int(round(alpha * unique_loci_count))))
+
+
+# ────────────────────── Hotspots helpers ──────────────────────
+
+def _last_internal_non_test(step_path: List[Dict[str, Any]]) -> Tuple[str | None, str | None]:
+    """
+    از انتهای مسیر downstream، اولین نود داخلی غیرتستی را برمی‌گرداند.
+    خروجی: (node_id, file) یا (None, None)
+    """
+    for step in reversed(step_path):
+        if not isinstance(step, dict):
+            continue
+        # داخلی = external نباشد و تست هم نباشد
+        if step.get("is_test", False):
+            continue
+        if step.get("type") == "external":
+            continue
+        node_id = step.get("node")
+        file = step.get("file")
+        if node_id:
+            return node_id, file
+    return None, None
+
+
+def _freq_counts(downstream_paths: List[List[Dict[str, Any]]]) -> Tuple[Dict[str, int], Dict[str, int]]:
+    """
+    فراوانی locus (تابع) و فایل را بر اساس آخرین نود داخلی غیرتستی در مسیرهای downstream می‌شمارد.
+    """
+    func_freq: Dict[str, int] = {}
+    file_freq: Dict[str, int] = {}
+    for path in downstream_paths:
+        nid, f = _last_internal_non_test(path)
+        if nid:
+            func_freq[nid] = func_freq.get(nid, 0) + 1
+        if f:
+            file_freq[f] = file_freq.get(f, 0) + 1
+    return func_freq, file_freq
+
+
+def _top_k(freq: Dict[str, int], k: int) -> List[str]:
+    """
+    top-k امن بر اساس (فراوانی نزولی، نام صعودی) — بدون اتکا به لیست order مجزا.
+    """
+    if k <= 0 or not freq:
+        return []
+    items = sorted(freq.items(), key=lambda kv: (-kv[1], kv[0]))
+    return [key for key, _ in items[:k]]
+
+
+def _build_hotspots_for_test(downstream_paths: List[List[Dict[str, Any]]],
+                             base_k: int,
+                             alpha: float) -> Dict[str, List[str]]:
+    """
+    Hotspots یک تست:
+      - locus (تابع داخلی غیرتستی) نهاییِ هر مسیر downstream را استخراج می‌کنیم.
+      - فراوانی تابع‌ها و فایل‌ها را می‌شماریم.
+      - k داینامیک برای همین تست را محاسبه می‌کنیم و top-k را برمی‌گردانیم.
+    """
+    func_freq, file_freq = _freq_counts(downstream_paths)
+    U = len(func_freq)  # تعداد locusهای یکتا
+    if U == 0:
+        return {"functions": [], "files": []}
+    k_test = _k_for_test(U, base_k, alpha)
+    return {
+        "functions": _top_k(func_freq, k_test),
+        "files": _top_k(file_freq, k_test),
+    }
+
+
+# ────────────────────── main builder ──────────────────────
 
 def build_structured_prompt(
     project_path: str,
@@ -59,38 +134,68 @@ def build_structured_prompt(
     lang: str,
     output_path: str = "output/llm_prompt.json",
 ) -> Dict:
-    out_dir = Path(output_path).resolve().parent
-    graph = _ensure_graph(project_path, out_dir)
+    """
+    ساخت پرامپت ساختاریافته برای LLM:
+      - ساخت گراف و تگ‌گذاری با لاگ‌ها
+      - خلاصهٔ تست‌ها
+      - مسیرهای بحرانی (enriched از extractor)
+      - Hotspots داینامیک per-test
+    """
+    # 1) Graph
+    graph = build_graph(project_path)
 
-    summary = _read_json(out_dir / "summary.json")
-    if not summary:
-        summary = build_test_summary(graph)
+    # 2) Tag with logs
+    logs = load_test_logs(log_path, lang)
+    graph = tag_graph_with_logs(graph, logs, lang)
 
-    _apply_failed_from_summary(graph, summary, lang)
-    critical = find_critical_paths(graph)
+    # 3) Summaries + enriched critical paths (enriched already in extractor)
+    summary = build_test_summary(graph)
+    critical_paths_raw = find_critical_paths(graph)  # { test_name: { upstream: [...], downstream: [...] } }
 
-    payload: Dict = {
-        "meta": {
-            "project_path": project_path,
-            "language": lang,
-            "graph": {
-                "nodes": graph.number_of_nodes(),
-                "edges": graph.number_of_edges(),
-            },
+    # 4) Meta
+    nodes = graph.number_of_nodes()
+    edges = graph.number_of_edges()
+    meta = {
+        "project_path": project_path,
+        "log_path": log_path,
+        "language": lang,
+        "graph": {
+            "nodes": nodes,
+            "edges": edges,
         },
-        "summary": summary,
-        "critical_paths": {},
     }
 
-    for test_name, paths in critical.items():
-        payload["critical_paths"][test_name] = {
-            "error": _err_msg(summary, test_name),
-            "upstream": paths.get("upstream", []),
-            "downstream": paths.get("downstream", []),
+    # 5) Dynamic k (fully data-driven)
+    base_k = _compute_base_k(nodes)
+    alpha = _compute_alpha(nodes, edges)
+
+    # 6) Merge errors + build hotspots
+    enriched_critical: Dict[str, Dict[str, Any]] = {}
+    hotspots: Dict[str, Dict[str, List[str]]] = {}
+
+    for test_name, paths in critical_paths_raw.items():
+        up = paths.get("upstream", []) or []
+        down = paths.get("downstream", []) or []
+
+        # افزودن پیام خطا کنار مسیرهای enriched
+        enriched_critical[test_name] = {
+            "error": get_error_message(summary, test_name),
+            "upstream": up,
+            "downstream": down,
         }
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    Path(output_path).write_text(
-        json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
-    return payload
+        # Hotspots برای این تست
+        hotspots[test_name] = _build_hotspots_for_test(down, base_k, alpha)
+
+    structured_prompt: Dict[str, Any] = {
+        "meta": meta,
+        "summary": summary,
+        "critical_paths": enriched_critical,  # (enriched از extractor)
+        "hotspots": hotspots,                 # NEW
+    }
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(structured_prompt, f, indent=2, ensure_ascii=False)
+
+    return structured_prompt

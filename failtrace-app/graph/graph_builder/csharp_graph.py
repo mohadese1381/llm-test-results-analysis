@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, Iterable
+from typing import Dict, List, Optional, Set, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import networkx as nx
 from tree_sitter import Language, Parser
@@ -13,11 +13,9 @@ import logging
 # ─────────────────────────────────────────────────────────────────────────────
 try:
     from tree_sitter_c_sharp import language as _cs_capsule
-
     CSHARP_LANG = Language(_cs_capsule())
 except ImportError:
     from tree_sitter_languages import get_language  # type: ignore
-
     CSHARP_LANG = get_language("c_sharp")
 PARSER = Parser(CSHARP_LANG)
 
@@ -30,72 +28,35 @@ logger = logging.getLogger(__name__)
 # Filters
 # ─────────────────────────────────────────────────────────────────────────────
 _EXCLUDED_DIRS: Set[str] = {
-    "bin",
-    "obj",
-    ".vs",
-    ".git",
-    ".github",
-    ".idea",
-    ".vscode",
-    "packages",
-    ".nuget",
-    "TestResults",
-    "Coverage",
-    ".sonarqube",
-    ".azure-pipelines",
-    ".artifacts",
-    "out",
-    "build",
-    "target",
-    "Generated",
+    "bin", "obj", ".vs", ".git", ".github", ".idea", ".vscode",
+    "packages", ".nuget", "TestResults", "Coverage", ".sonarqube",
+    ".azure-pipelines", ".artifacts", "out", "build", "target", "Generated",
 }
 _EXCLUDED_FILE_SUFFIXES_CI = (
-    ".g.cs",
-    ".g.i.cs",
-    ".designer.cs",
-    ".generated.cs",
-    "assemblyinfo.cs",
+    ".g.cs", ".g.i.cs", ".designer.cs", ".generated.cs", "assemblyinfo.cs",
 )
-
 
 def _contains_excluded_dir(path: Path) -> bool:
     return any(part.lower() in _EXCLUDED_DIRS for part in path.parts)
 
-
 def _is_excluded_file(name: str) -> bool:
-    lname = name.lower()
-    return lname.endswith(_EXCLUDED_FILE_SUFFIXES_CI)
-
+    return name.lower().endswith(_EXCLUDED_FILE_SUFFIXES_CI)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Test detection
 # ─────────────────────────────────────────────────────────────────────────────
 TEST_ATTRS = {
-    # xUnit
-    "Fact",
-    "Theory",
-    # NUnit
-    "Test",
-    "TestCase",
-    "TestCaseSource",
-    "ParameterizedTest",
-    "TestFixture",
-    # MSTest
-    "TestMethod",
-    "DataTestMethod",
-    "TestClass",
-    # skip
-    "Ignore",
+    "Fact", "Theory", "Test", "TestCase", "TestCaseSource", "ParameterizedTest",
+    "TestFixture", "TestMethod", "DataTestMethod", "TestClass", "Ignore",
 }
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # AST helpers
 # ─────────────────────────────────────────────────────────────────────────────
 def _walk(node):
     cursor = node.walk()
-    reached_end = False
-    while not reached_end:
+    done = False
+    while not done:
         yield cursor.node
         if cursor.goto_first_child():
             continue
@@ -103,17 +64,13 @@ def _walk(node):
             continue
         while True:
             if not cursor.goto_parent():
-                reached_end = True
+                done = True
                 break
             if cursor.goto_next_sibling():
                 break
 
-
 def _text(src: bytes, node) -> str:
-    return (
-        src[node.start_byte : node.end_byte].decode("utf-8", "ignore") if node else ""
-    )
-
+    return src[node.start_byte : node.end_byte].decode("utf-8", "ignore") if node else ""
 
 def _first(node, typ: str):
     for i in range(getattr(node, "child_count", 0)):
@@ -122,47 +79,41 @@ def _first(node, typ: str):
             return ch
     return None
 
-
 def _decl_name(node, src: bytes) -> Optional[str]:
     nm = node.child_by_field_name("name") or _first(node, "identifier")
     return _text(src, nm).strip() if nm else None
 
-
 def _namespace(root, src: bytes) -> str:
+    """
+    پشتیبانی از:
+      - namespace_declaration
+      - file_scoped_namespace_declaration (C# 10+)
+    """
     for n in _walk(root):
-        if n.type == "namespace_declaration":
+        if n.type in ("namespace_declaration", "file_scoped_namespace_declaration"):
             nm = n.child_by_field_name("name")
-            return _text(src, nm).strip() if nm else "<global>"
+            txt = _text(src, nm).strip() if nm else ""
+            return txt or "<global>"
     return "<global>"
-
 
 def _enclosing_type(node, src: bytes) -> Optional[str]:
     cur = node.parent
     while cur:
-        if cur.type in (
-            "class_declaration",
-            "struct_declaration",
-            "interface_declaration",
-            "record_declaration",
-        ):
+        if cur.type in ("class_declaration", "struct_declaration", "interface_declaration", "record_declaration"):
             return _decl_name(cur, src)
         cur = cur.parent
     return None
-
 
 def _method_name(node, src: bytes) -> Optional[str]:
     nm = node.child_by_field_name("name") or _first(node, "identifier")
     return _text(src, nm).strip() if nm else None
 
-
 def _is_async(node, src: bytes) -> bool:
-    # any child 'modifier' == async
     for i in range(node.child_count):
         ch = node.child(i)
         if ch.type == "modifier" and _text(src, ch).strip() == "async":
             return True
     return False
-
 
 def _param_count(node) -> int:
     pl = node.child_by_field_name("parameter_list") or _first(node, "parameter_list")
@@ -170,31 +121,19 @@ def _param_count(node) -> int:
         return 0
     return sum(1 for ch in pl.children if ch.type == "parameter")
 
-
 def _arg_count(inv_node) -> int:
-    al = inv_node.child_by_field_name("argument_list") or _first(
-        inv_node, "argument_list"
-    )
+    al = inv_node.child_by_field_name("argument_list") or _first(inv_node, "argument_list")
     if not al:
         return 0
     return sum(1 for ch in al.children if ch.type == "argument")
 
-
 def _identifier_deep(node, src: bytes) -> Optional[str]:
-    """
-    آخرین شناسه قابل‌اتکا از یک عبارت را برمی‌گرداند:
-    - member_access_expression: name
-    - invocation_expression: از function/expression بیرون بکش
-    - generic_name / qualified_name / identifier
-    - object_creation_expression: type
-    """
     if not node:
         return None
     t = node.type
     if t == "identifier":
         return _text(src, node).strip() or None
     if t in ("qualified_name", "generic_name"):
-        # آخرین بخش
         last = None
         for i in range(node.child_count):
             v = _identifier_deep(node.child(i), src)
@@ -205,7 +144,6 @@ def _identifier_deep(node, src: bytes) -> Optional[str]:
         nm = node.child_by_field_name("name") or _first(node, "identifier")
         if nm:
             return _text(src, nm).strip() or None
-        # fallback: deepest identifier
         last = None
         for i in range(node.child_count):
             v = _identifier_deep(node.child(i), src)
@@ -213,14 +151,11 @@ def _identifier_deep(node, src: bytes) -> Optional[str]:
                 last = v
         return last
     if t == "invocation_expression":
-        fn = node.child_by_field_name("function") or node.child_by_field_name(
-            "expression"
-        )
+        fn = node.child_by_field_name("function") or node.child_by_field_name("expression")
         return _identifier_deep(fn, src)
     if t == "object_creation_expression":
         typ = node.child_by_field_name("type")
         return _identifier_deep(typ, src)
-    # walk children
     last = None
     for i in range(node.child_count):
         v = _identifier_deep(node.child(i), src)
@@ -228,20 +163,13 @@ def _identifier_deep(node, src: bytes) -> Optional[str]:
             last = v
     return last
 
-
 def _return_type(node, src: bytes) -> str:
     if node.type == "constructor_declaration":
         return "void"
-    t = (
-        node.child_by_field_name("type")
-        or _first(node, "predefined_type")
-        or _first(node, "identifier")
-    )
+    t = node.child_by_field_name("type") or _first(node, "predefined_type") or _first(node, "identifier")
     return _text(src, t).strip() if t else "void"
 
-
 def _has_test_attribute_on_type(node, src: bytes) -> bool:
-    # for class/fixture-level attributes
     for i in range(node.child_count):
         ch = node.child(i)
         if ch.type == "attribute_list":
@@ -253,9 +181,7 @@ def _has_test_attribute_on_type(node, src: bytes) -> bool:
                         return True
     return False
 
-
 def _is_test_method(node, src: bytes, class_is_test: bool) -> bool:
-    # method-level attributes win
     for i in range(node.child_count):
         ch = node.child(i)
         if ch.type == "attribute_list":
@@ -267,41 +193,20 @@ def _is_test_method(node, src: bytes, class_is_test: bool) -> bool:
                     if nm in TEST_ATTRS:
                         return True
     if class_is_test:
-        # در کلاس تست، متدهای public اغلب تست‌اند حتی بدون اتریبیوت
-        # (xUnit: اجازه‌ی Fact لازم است، ولی برای پوشش حداکثری این را قبول می‌کنیم)
         return True
-    # نام‌گذاری
     nm = _method_name(node, src) or ""
     return nm.lower().startswith(("test", "should_", "when_"))
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Inheritance resolution
-# ─────────────────────────────────────────────────────────────────────────────
-def _collect_all_bases(type_key: str, base_map: Dict[str, List[str]]) -> Set[str]:
-    """
-    type_key = "{ns}::{rel}::{Type}"
-    base_map  type_key -> [BaseTypeName, ...]
-    خروجی: مجموعه‌ی نام تمام BaseType ها (به‌صورت «نام نوع»، نه کلید کامل)
-    """
-    out: Set[str] = set()
-    stack: List[str] = [type_key]
-    seen: Set[str] = set()
-    while stack:
-        tk = stack.pop()
-        if tk in seen:
-            continue
-        seen.add(tk)
-        for b in base_map.get(tk, []):
-            if b not in out:
-                out.add(b)
-            # اگر کلیدی هست که با این base ختم می‌شود، ادامه بده
-            for k in base_map:
-                # k ... :: {Base}
-                if k.endswith(f"::{b}"):
-                    stack.append(k)
-    return out
-
+def _collect_usings(root, src: bytes) -> List[str]:
+    usings: List[str] = []
+    for n in _walk(root):
+        if n.type == "using_directive":
+            name = n.child_by_field_name("name")
+            if name:
+                txt = _text(src, name).strip()
+                if txt:
+                    usings.append(txt)
+    return usings
 
 # ─────────────────────────────────────────────────────────────────────────────
 # .csproj references (projects & nuget)
@@ -326,7 +231,6 @@ def _parse_csproj_refs(project_path: Path) -> Tuple[Set[str], Set[str]]:
             logger.warning(f"Failed to parse {csproj}: {e}")
     return proj_refs, pkg_refs
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
@@ -334,29 +238,21 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
     base = Path(project_path)
     graph = nx.DiGraph()
 
-    # Indexes for matching
-    name_index: Dict[str, List[str]] = {}  # method -> [node_ids]
-    typemethod_index: Dict[Tuple[str, str], List[str]] = (
-        {}
-    )  # (Type, Method) -> [node_ids]
-    ns_typemethod_index: Dict[Tuple[str, str, str], List[str]] = (
-        {}
-    )  # (NS, Type, Method) -> [node_ids]
-    base_map: Dict[str, List[str]] = {}  # type_key -> [base names]
+    name_index: Dict[str, List[str]] = {}
+    typemethod_index: Dict[Tuple[str, str], List[str]] = {}
+    ns_typemethod_index: Dict[Tuple[str, str, str], List[str]] = {}
+    base_map: Dict[str, List[str]] = {}
 
     proj_refs, pkg_refs = _parse_csproj_refs(base)
-    logger.info(f"Project refs: {proj_refs}, Package refs: {pkg_refs}")
 
-    # Collect files
     files: List[Path] = []
     for p in base.rglob("*.cs"):
-        if _contains_excluded_dir(p):  # skip generated & build
+        if _contains_excluded_dir(p):
             continue
         if _is_excluded_file(p.name):
             continue
         files.append(p)
 
-    # ── Pass 1: collect nodes & bases
     def pass1(path: Path):
         try:
             src = path.read_bytes()
@@ -366,16 +262,11 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
             rel = path.relative_to(base).as_posix()
 
             local_bases: Dict[str, List[str]] = {}
-            locals_idx: List[Tuple[str, str, str]] = []  # (Type, Method, node_id)
-            class_is_test: Dict[str, bool] = {}  # key = (ns, rel, Type) -> is_test
+            locals_idx: List[Tuple[str, str, str]] = []
+            class_is_test: Dict[str, bool] = {}
 
-            # classes / interfaces / records
             for n in _walk(root):
-                if n.type in (
-                    "class_declaration",
-                    "interface_declaration",
-                    "record_declaration",
-                ):
+                if n.type in ("class_declaration", "interface_declaration", "record_declaration"):
                     cn = _decl_name(n, src)
                     if not cn:
                         continue
@@ -384,16 +275,13 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
                     if base_list:
                         for ch in base_list.children:
                             if ch.type in ("simple_base_type", "base_type"):
-                                nm = _text(src, ch).strip()
-                                # پاک‌سازی generic args
-                                nm = nm.split("<", 1)[0].strip()
+                                nm = _text(src, ch).strip().split("<", 1)[0].strip()
                                 if nm:
                                     bases.append(nm)
                     key = f"{ns}::{rel}::{cn}"
                     local_bases[key] = bases
                     class_is_test[key] = _has_test_attribute_on_type(n, src)
 
-            # methods (+ ctors)
             for n in _walk(root):
                 if n.type not in ("method_declaration", "constructor_declaration"):
                     continue
@@ -416,59 +304,46 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
                     is_async=_is_async(n, src),
                 )
                 locals_idx.append((tname, mname, node_id))
-
-            return local_bases, locals_idx
+            return local_bases, locals_idx, ns, rel, _collect_usings(root, src)
         except Exception as e:
             logger.warning(f"Pass1 failed for {path}: {e}")
-            return {}, []
+            return {}, [], "<global>", path.name, []
+
+    file_usings: Dict[str, List[str]] = {}
+    file_ns: Dict[str, str] = {}
 
     with ThreadPoolExecutor() as ex1:
         futs = {ex1.submit(pass1, f): f for f in files}
         for fut in as_completed(futs):
-            lb, locals_idx = fut.result()
+            lb, locals_idx, ns, rel, usings = fut.result()
             base_map.update(lb)
+            file_usings[rel] = usings
+            file_ns[rel] = ns
             for tname, mname, nid in locals_idx:
                 name_index.setdefault(mname, []).append(nid)
                 typemethod_index.setdefault((tname, mname), []).append(nid)
-                ns, rel, *_ = nid.split("::", 3)
-                ns_typemethod_index.setdefault((ns, tname, mname), []).append(nid)
+                ns2, rel2, *_ = nid.split("::", 3)
+                ns_typemethod_index.setdefault((ns2, tname, mname), []).append(nid)
 
-    # ── Pass 2: edges
     seen_edges: Set[Tuple[str, str]] = set()
 
     def _match_targets(ns: str, caller_type: str, simple: str, argc: int) -> List[str]:
-        """
-        چندمرحله‌ای:
-        1) (NS+Type+Method) با پارامتر برابر
-        2) (Type+Method) با پارامتر برابر
-        3) فقط نام متد با پارامتر برابر
-        4) بدون قیود پارامتر، اما نزدیک‌ترین‌ها (NS/Type) در اولویت
-        """
-        candidates: List[str] = []
-
-        # 1
+        cands: List[str] = []
         for nid in ns_typemethod_index.get((ns, caller_type, simple), []):
             if graph.nodes[nid].get("parameters") == argc:
-                candidates.append(nid)
-        if candidates:
-            return candidates
-
-        # 2
+                cands.append(nid)
+        if cands:
+            return cands
         for nid in typemethod_index.get((caller_type, simple), []):
             if graph.nodes[nid].get("parameters") == argc:
-                candidates.append(nid)
-        if candidates:
-            return candidates
-
-        # 3
+                cands.append(nid)
+        if cands:
+            return cands
         for nid in name_index.get(simple, []):
             if graph.nodes[nid].get("parameters") == argc:
-                candidates.append(nid)
-        if candidates:
-            return candidates
-
-        # 4) relax param count
-        # prefer same NS & Type
+                cands.append(nid)
+        if cands:
+            return cands
         pref = ns_typemethod_index.get((ns, caller_type, simple), [])
         if pref:
             return pref
@@ -477,22 +352,37 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
             return pref2
         return name_index.get(simple, []) or []
 
+    def _update_external_node(ext_key: str, origin: Dict[str, object]) -> None:
+        """
+        origins را روی نود خارجی به‌صورت تجمیعی نگه می‌داریم و یک نمای لیستی
+        مرتب‌شده بر اساس count (نزولی) نیز اضافه می‌کنیم.
+        """
+        node = graph.nodes[ext_key]
+        counts: Dict[str, int] = node.get("origin_counts", {})
+        key = f"{origin.get('file')}|{origin.get('namespace')}|{origin.get('kind')}|{origin.get('symbol')}"
+        counts[key] = counts.get(key, 0) + 1
+        node["origin_counts"] = counts
+
+        parts: List[Dict[str, object]] = []
+        for k, c in sorted(counts.items(), key=lambda kv: kv[1], reverse=True):
+            f, ns, kind, sym = k.split("|", 3)
+            parts.append({"file": f, "namespace": ns, "kind": kind, "symbol": sym, "count": c})
+        node["origins"] = parts
+
     def pass2(path: Path):
         edges: List[Tuple[str, str]] = []
-        externals: List[Tuple[str, str, int, str]] = []  # (caller, simple, argc, kind)
+        ex_edges: List[Tuple[str, str, Dict[str, object]]] = []  # (caller, ext_key, origin)
         try:
             src = path.read_bytes()
             tree = PARSER.parse(src)
             root = tree.root_node
-            ns = _namespace(root, src)
             rel = path.relative_to(base).as_posix()
+            ns = file_ns.get(rel) or _namespace(root, src)
+            usings = file_usings.get(rel) or _collect_usings(root, src)
 
             def _caller_node(n):
                 p = n
-                while p and p.type not in (
-                    "method_declaration",
-                    "constructor_declaration",
-                ):
+                while p and p.type not in ("method_declaration", "constructor_declaration"):
                     p = p.parent
                 if not p:
                     return None, None
@@ -502,9 +392,7 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
 
             for n in _walk(root):
                 if n.type == "invocation_expression":
-                    fn = n.child_by_field_name("function") or n.child_by_field_name(
-                        "expression"
-                    )
+                    fn = n.child_by_field_name("function") or n.child_by_field_name("expression")
                     callee = _identifier_deep(fn, src)
                     argc = _arg_count(n)
                     cm, ct = _caller_node(n)
@@ -522,7 +410,22 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
                                 edges.append((caller, tgt))
                         continue
 
-                    externals.append((caller, simple, argc, "call"))
+                    if simple in proj_refs:
+                        ext_key = f"project::{simple}"
+                    elif simple in pkg_refs:
+                        ext_key = f"nuget::{simple}"
+                    else:
+                        ext_key = f"external::{simple}/{argc}"
+
+                    origin = {
+                        "language": "csharp",
+                        "namespace": ns,
+                        "usings": usings,
+                        "symbol": simple,
+                        "kind": "call",
+                        "file": rel,
+                    }
+                    ex_edges.append((caller, ext_key, origin))
 
                 elif n.type == "object_creation_expression":
                     typ = n.child_by_field_name("type")
@@ -536,8 +439,6 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
                         continue
 
                     simple_ctor = callee_type.split(".")[-1]
-                    # سازنده‌ها با نام <ctor> ذخیره شدند؛ ولی معمولاً از نظر نام متدی ندارند.
-                    # پس ابتدا <ctor> در همان Type هدف را جست‌وجو می‌کنیم
                     ctor_targets = typemethod_index.get((simple_ctor, "<ctor>"), [])
                     if ctor_targets:
                         for tgt in ctor_targets:
@@ -545,7 +446,6 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
                                 edges.append((caller, tgt))
                         continue
 
-                    # شاید سازنده نام‌گذاری نشده و به Initialize/Build می‌خورد—fallback به نام نوع
                     targets = name_index.get(simple_ctor, [])
                     if targets:
                         for tgt in targets:
@@ -553,36 +453,45 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
                                 edges.append((caller, tgt))
                         continue
 
-                    externals.append((caller, simple_ctor, argc, "new"))
+                    if simple_ctor in proj_refs:
+                        ext_key = f"project::{simple_ctor}"
+                    elif simple_ctor in pkg_refs:
+                        ext_key = f"nuget::{simple_ctor}"
+                    else:
+                        ext_key = f"external::{simple_ctor}/{argc}"
 
-                elif n.type == "await_expression":
-                    # await foo.BarAsync() → در child یک invocation_expression است، قبلاً گرفته می‌شود
-                    continue
+                    origin = {
+                        "language": "csharp",
+                        "namespace": ns,
+                        "usings": usings,
+                        "symbol": simple_ctor,
+                        "kind": "new",
+                        "file": rel,
+                    }
+                    ex_edges.append((caller, ext_key, origin))
 
-            return edges, externals
+            return edges, ex_edges
         except Exception as e:
             logger.warning(f"Pass2 failed for {path}: {e}")
             return [], []
 
     with ThreadPoolExecutor() as ex2:
-        futs2 = {ex2.submit(pass2, f): f for f in files}
-        for fut in as_completed(futs2):
+        futs = {ex2.submit(pass2, f): f for f in files}
+        for fut in as_completed(futs):
             eds, exs = fut.result()
             for u, v in eds:
                 if not graph.has_edge(u, v):
                     graph.add_edge(u, v)
                     seen_edges.add((u, v))
-            for caller, simple, argc, kind in exs:
-                # Label external nodes; try to hint project/nuget when name matches
-                if simple in proj_refs:
-                    ext_key = f"project::{simple}"
-                elif simple in pkg_refs:
-                    ext_key = f"nuget::{simple}"
-                else:
-                    ext_key = f"external::{simple}/{argc}"
+            for caller, ext_key, origin in exs:
                 if not graph.has_node(ext_key):
-                    graph.add_node(ext_key, type="external")
+                    graph.add_node(ext_key, type="external", origins=[])
                 if not graph.has_edge(caller, ext_key):
-                    graph.add_edge(caller, ext_key)
+                    graph.add_edge(caller, ext_key, origin=origin)
+                else:
+                    ed = graph.get_edge_data(caller, ext_key) or {}
+                    if "origin" not in ed:
+                        graph.add_edge(caller, ext_key, origin=origin)
+                _update_external_node(ext_key, origin)
 
     return graph

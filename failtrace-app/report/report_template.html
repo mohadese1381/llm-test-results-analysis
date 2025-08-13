@@ -83,10 +83,10 @@
           </div>
         </div>
 
-        <!-- replaced Risks table with Bubble chart -->
-        <div class="card card-flex">
-          <div class="section-title"><h3>Risk Matrix (Bubble)</h3></div>
-          <div class="chart-area stick-bottom">
+        <!-- Risks as bubble chart (title cleaned, chart higher in card) -->
+        <div class="card card-flex card--risk">
+          <div class="section-title"><h3>Risk Matrix</h3></div>
+          <div class="chart-area">
             <canvas id="riskBubblesChart"></canvas>
           </div>
         </div>
@@ -94,7 +94,7 @@
 
       <section class="card" style="margin-top: 16px">
         <div class="section-title"><h3>Failed Items</h3></div>
-        <div  class="table-wrap table-wrap--scroll">
+        <div class="table-wrap table-wrap--fail-scroll" id="failWrap">
           <table class="table table-fail" id="failTable">
             <thead>
               <tr>

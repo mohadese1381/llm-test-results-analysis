@@ -17,7 +17,7 @@
       "name": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
       "file": "tests/unit/test_delayed_assert.py",
       "line": null,
-      "error": "AssertionError: #x1B[93m\n\nassert_expectations() called at#x1B[0m\n#x1B[4m#x1B[94m\"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:13\"#x1B[0m#x1B[93m in test_delayed_response_with_error()\n\n#x1B[91m#x1B[4mFailed Expectations : 1\n#x1B[0m\n1: #x1B[91mFailed at \"#x1B[0m#x1B[94m#x1B[4mC:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:12#x1B[0m#x1B[91m\", in test_delayed_response_with_error()\n\t#x1B[1m#x1B[4mErrorMessage:#x1B[0m#x1B[91m\t{\"key\": \"value\"}#x1B[0m\n    expect(response.json() == {}, response.text)",
+      "error": "AssertionError: \n\nassert_expectations() called at\n\"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:13\" in test_delayed_response_with_error()\n\nFailed Expectations : 1\n\n1: Failed at \"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:12\", in test_delayed_response_with_error()\n\tErrorMessage:\t{\"key\": \"value\"}\n    expect(response.json() == {}, response.text)",
       "doc": ""
     },
     {

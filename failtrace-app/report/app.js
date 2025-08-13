@@ -7,7 +7,19 @@
   const ftypes = Array.isArray(charts.failureTypes) ? charts.failureTypes : [];
   const insights = Array.isArray(r.insights) ? r.insights : [];
   const failures = Array.isArray(r.failures) ? r.failures : [];
-  const bubbles = Array.isArray(charts.riskBubbles) ? charts.riskBubbles : [];
+  let bubbles = Array.isArray(charts.riskBubbles) ? charts.riskBubbles : [];
+
+  // -------- helpers --------
+  const toPretty = (s) =>
+    String(s || "")
+      .replace(/::/g, ">")
+      .replace(/\//g, ">")
+      .replace(/\\/g, ">")
+      .replace(/>{2,}/g, ">")
+      .replace(/^\s*>|>\s*$/g, "")
+      .trim();
+
+  const uniq = (arr) => Array.from(new Set(arr || []));
 
   // Header
   document.getElementById("projName").textContent = proj.name || "—";
@@ -51,14 +63,17 @@
       fixesWrap.appendChild(tag);
     });
 
-    let locationText = "";
+    // Location: ترجیح توابع (به‌عنوان پیشنهاد) و سپس location/file
+    let locParts = [];
     if (Array.isArray(item.functions) && item.functions.length) {
-      locationText = item.functions.join(", ");
-    } else if (item.location) {
-      locationText = item.location;
-    } else if (item.file) {
-      locationText = item.file;
+      locParts.push("Suggested: " + toPretty(uniq(item.functions).join(", ")));
     }
+    if (item.location) {
+      locParts.push(toPretty(item.location));
+    } else if (item.file) {
+      locParts.push(toPretty(item.file));
+    }
+    const locationText = locParts.join("  |  ");
 
     const tdTest = document.createElement("td");
     tdTest.textContent = item.title || "";
@@ -74,6 +89,17 @@
     tr.append(tdTest, tdRoot, tdLoc, tdErr, tdFix);
     tbody.appendChild(tr);
   });
+
+  // تا ۴ ردیف، بدون اسکرول؛ بیشتر شد اسکرول فعال شود (فقط همین کارت)
+  const failWrap = document.getElementById("failWrap");
+  const failRows = tbody.querySelectorAll("tr").length;
+  if (failRows <= 4) {
+    failWrap.classList.remove("table-wrap--fail-scroll");
+    failWrap.classList.add("table-wrap--fail-auto");
+  } else {
+    failWrap.classList.remove("table-wrap--fail-auto");
+    failWrap.classList.add("table-wrap--fail-scroll");
+  }
 
   // Charts
   const ctx1 = document.getElementById("testsOverviewChart").getContext("2d");
@@ -139,7 +165,17 @@
     },
   });
 
-  // Risk bubbles (only Probability, Impact, Risk in tooltip)
+  // Risk bubbles
+  // ثبات نمایش: مرتب‌سازی پایدار بر اساس نام تست
+  bubbles = bubbles
+    .slice()
+    .map((b) => {
+      const parts = String(b.test_name || "").split("::");
+      const onlyMethod = parts.length ? parts[parts.length - 1] : "";
+      return { ...b, __name: onlyMethod };
+    })
+    .sort((a, b) => a.__name.localeCompare(b.__name));
+
   const ctx3 = document.getElementById("riskBubblesChart").getContext("2d");
   const sevColor = (s) => {
     const v = String(s || "").toLowerCase();
@@ -147,12 +183,12 @@
     if (v === "medium") return "#f59e0b";
     return "#19a974";
   };
+
   new Chart(ctx3, {
     type: "bubble",
     data: {
       datasets: [
         {
-          label: "Risks",
           data: bubbles.map((b) => ({
             x: Number(b.probability || 0),
             y: Number(b.impact || 0),
@@ -190,7 +226,11 @@
         legend: { display: false },
         tooltip: {
           callbacks: {
-            title: () => "", // no title
+            // نام تست (فقط نام متد) در بالای تول‌کیت + سه پارامتر
+            title: (ctx) => {
+              const idx = ctx[0]?.dataIndex ?? 0;
+              return bubbles[idx]?.__name || "";
+            },
             label: (ctx) => {
               const item = bubbles[ctx.dataIndex] || {};
               const p = Math.round(Number(item.probability || 0));

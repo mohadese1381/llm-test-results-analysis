@@ -1,13 +1,18 @@
-from __future__ import annotations
 import json
+import re
 from typing import Any, Dict, List, Optional
 
 
 class PromptGenerator:
+    """
+    Assemble a best‐practice prompt for analyzing failed tests via a large language model.
+    بدون Chain-of-Thought؛ خروجی فقط JSON مطابق اسکیمای جدید.
+    """
+
     _SYSTEM = (
         "You are an expert software QA/SE assistant. Analyze failed tests across Python/Java/C# projects, "
         "using the provided test summary, critical call paths, and code snippets. "
-        "Perform internal step-by-step reasoning but DO NOT reveal chain-of-thought. "
+        "Do rigorous internal reasoning but DO NOT reveal chain-of-thought. "
         "Output only the final JSON that follows the required schema. "
         "Explain root causes in detail, suggest fixes, and provide evidence-based rationale. "
         "For each failed test, you MUST provide a concise `failure_type`. "
@@ -26,11 +31,11 @@ class PromptGenerator:
                     "files": ["<relpath>", "..."],
                     "functions": ["<file::Class::func>", "..."],
                 },
-                "failure_type": "<short normalized type, e.g. AssertionError | NullPointerException | Timeout | Other>",
-                "root_cause": "<precise details in at least 3 sentences>",
+                "failure_type": "<short normalized type, e.g. AssertionError | AttributeError | NullPointerException | Timeout | Network | Configuration | Mocking | DataMismatch | Other>",
+                "root_cause": "<precise multi-sentence explanation>",
                 "severity": "<low|medium|high>",
                 "suggested_fixes": ["<actionable fix 1>", "<actionable fix 2>"],
-                "rationale": ["<short high-level evidence, no CoT>", "..."],
+                "rationale": ["<very short bullets, no CoT>", "..."],
             }
         ]
     }
@@ -95,19 +100,29 @@ class PromptGenerator:
 
     def _render_critical_paths_text(self) -> str:
         out = ["CRITICAL PATHS:"]
-        for test, info in self._data.get("critical_paths", {}).items():
+        cps = self._data.get("critical_paths", {}) or {}
+        for test, info in cps.items():
             out.append(f"\nTest: {test}")
             err = info.get("error") or ""
             if err:
                 out.append(f"Error: {err}")
             for direction in ("upstream", "downstream"):
-                paths = info.get(direction, [])
+                paths = info.get(direction, []) or []
                 if not paths:
                     continue
                 out.append(f"{direction.capitalize()}:")
                 for path in paths:
                     seq = " → ".join(n.get("node", "?") for n in path)
                     out.append(f"  • {seq}")
+
+        # اگر hotspots موجود بود، برای locus راهنما بده
+        hs = self._data.get("hotspots") or {}
+        if hs:
+            out.append("\nHOTSPOTS (locus hints):")
+            for test, payload in hs.items():
+                fs = ", ".join(payload.get("functions", [])[:5])
+                ps = ", ".join(payload.get("files", [])[:5])
+                out.append(f"- {test}\n  functions: {fs}\n  files: {ps}")
         return "\n".join(out)
 
     def _render_function_snippets(self) -> str:
@@ -126,13 +141,18 @@ class PromptGenerator:
         return "\n".join(out)
 
     def _render_few_shot(self) -> str:
-        lines = ["FEW-SHOT EXAMPLES (style only):"]
+        """
+        اگر few-shot ها کلید reasoning داشته باشند، آن را به rationale نگاشت می‌کنیم
+        تا با اسکیمای نهایی سازگار شوند (و از CoT هم جلوگیری شود).
+        """
+        lines = ["FEW-SHOT EXAMPLES (style only, no chain-of-thought):"]
         for ex in self._few_shot:
             ip = ex.get("input", "").strip()
             op = ex.get("output", "").strip()
             if not ip or not op:
                 continue
-            lines.append(f"\nINPUT:\n{ip}\nOUTPUT:\n{op}")
+            op_norm = re.sub(r'("|\')reasoning("|\')\s*:', r'"rationale":', op)
+            lines.append(f"\nINPUT:\n{ip}\nOUTPUT:\n{op_norm}")
         return "\n".join(lines)
 
     def _render_output_contract(self) -> str:
