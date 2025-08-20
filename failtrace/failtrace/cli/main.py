@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 import json
 import webbrowser
-import importlib.resources as resources
+
 import networkx as nx
 
 from ..graph.builder import build_graph, detect_language
@@ -74,21 +74,17 @@ def _assemble_and_maybe_call_api(
 
 def _emit_report(args, out_dir: Path) -> None:
     try:
-        report_dir = Path.cwd() / "report"
-        report_dir.mkdir(parents=True, exist_ok=True)
-
-        with resources.path("failtrace.static", "report_template.html") as tpl_path:
-            final = render_report_html(
-                project_path=args.project,
-                out_dir=str(out_dir),
-                template_path=str(tpl_path),
-            )
-
+        template_path = (
+            Path(__file__).resolve().parents[1] / "report" / "report_template.html"
+        )
+        final = render_report_html(
+            project_path=args.project,
+            out_dir=str(out_dir),
+            template_path=str(template_path),
+        )
         logger.info(f"✔ Report generated: {final}")
-
         if getattr(args, "open_report", False):
             webbrowser.open(f"file://{final}")
-
     except ReportBuildError as e:
         logger.error(f"✖ Failed to build report: {e}")
     except Exception as e:
@@ -100,9 +96,7 @@ def _timed_step(step_num, total_steps, description, func, *args, **kwargs):
     logger.info(f"✔ {description}...")
     result = func(*args, **kwargs)
     elapsed = time.perf_counter() - start
-    logger.info(
-        f"Completed in {elapsed:.2f}s ({int((step_num/total_steps)*100)}% done)"
-    )
+    logger.info(f"Completed in {elapsed:.2f}s ({int((step_num/total_steps)*100)}% done)")
     return result
 
 
@@ -110,63 +104,21 @@ def run_full(args) -> None:
     out_dir = Path("output")
     out_dir.mkdir(parents=True, exist_ok=True)
     total_steps = 8
-    lang = _timed_step(
-        1, total_steps, "Detecting language", detect_language, args.project
-    )
-    graph = _timed_step(
-        2, total_steps, "Building dependency graph", build_graph, args.project
-    )
-    _timed_step(
-        3,
-        total_steps,
-        "Visualizing graph",
-        visualize_graph,
-        graph,
-        str(out_dir / "graph.html"),
-    )
-    logs = _timed_step(
-        4, total_steps, "Loading test logs", load_test_logs, args.log, lang
-    )
-    _timed_step(
-        5,
-        total_steps,
-        "Tagging graph with logs",
-        tag_graph_with_logs,
-        graph,
-        logs,
-        lang,
-    )
+    lang = _timed_step(1, total_steps, "Detecting language", detect_language, args.project)
+    graph = _timed_step(2, total_steps, "Building dependency graph", build_graph, args.project)
+    _timed_step(3, total_steps, "Visualizing graph", visualize_graph, graph, str(out_dir / "graph.html"))
+    logs = _timed_step(4, total_steps, "Loading test logs", load_test_logs, args.log, lang)
+    _timed_step(5, total_steps, "Tagging graph with logs", tag_graph_with_logs, graph, logs, lang)
     _save_graph(graph, out_dir)
-    summary = _timed_step(
-        6, total_steps, "Summarizing test results", build_test_summary, graph
-    )
-    (out_dir / "summary.json").write_text(
-        json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    summary = _timed_step(6, total_steps, "Summarizing test results", build_test_summary, graph)
+    (out_dir / "summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     prompt_path = out_dir / "llm_prompt.json"
-    _timed_step(
-        7,
-        total_steps,
-        "Building LLM structured prompt",
-        build_structured_prompt,
-        project_path=args.project,
-        log_path=args.log,
-        lang=lang,
-        output_path=str(prompt_path),
-    )
+    _timed_step(7, total_steps, "Building LLM structured prompt", build_structured_prompt,
+                project_path=args.project, log_path=args.log, lang=lang, output_path=str(prompt_path))
     functions_path = out_dir / "function_summaries.json"
-    _timed_step(
-        8,
-        total_steps,
-        "Extracting critical function code",
-        extract_critical_functions,
-        project_path=args.project,
-        prompt_file=str(prompt_path),
-        output_file=str(functions_path),
-    )
-    _assemble_and_maybe_call_api(
-        prompt_path, functions_path, args.model, args.dry_run, out_dir, args.project
-    )
+    _timed_step(8, total_steps, "Extracting critical function code", extract_critical_functions,
+                project_path=args.project, prompt_file=str(prompt_path), output_file=str(functions_path))
+    _assemble_and_maybe_call_api(prompt_path, functions_path, args.model, args.dry_run, out_dir, args.project)
     _emit_report(args, out_dir)
 
 
@@ -174,60 +126,33 @@ def run_quick(args) -> None:
     out_dir = Path("output")
     out_dir.mkdir(parents=True, exist_ok=True)
     total_steps = 7
-    lang = _timed_step(
-        1, total_steps, "Detecting language", detect_language, args.project
-    )
+    lang = _timed_step(1, total_steps, "Detecting language", detect_language, args.project)
     graph = _timed_step(2, total_steps, "Loading cached graph", _load_graph, out_dir)
     if graph is None:
-        graph = _timed_step(
-            3, total_steps, "Building dependency graph", build_graph, args.project
-        )
+        graph = _timed_step(3, total_steps, "Building dependency graph", build_graph, args.project)
         logs = load_test_logs(args.log, lang)
         graph = tag_graph_with_logs(graph, logs, lang)
         _save_graph(graph, out_dir)
-    logs = _timed_step(
-        4, total_steps, "Loading test logs", load_test_logs, args.log, lang
-    )
-    _timed_step(
-        5,
-        total_steps,
-        "Tagging graph with logs",
-        tag_graph_with_logs,
-        graph,
-        logs,
-        lang,
-    )
-    summary = _timed_step(
-        6, total_steps, "Summarizing test results", build_test_summary, graph
-    )
-    (out_dir / "summary.json").write_text(
-        json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
-    critical = _timed_step(
-        7, total_steps, "Extracting critical paths", find_critical_paths, graph
-    )
+    logs = _timed_step(4, total_steps, "Loading test logs", load_test_logs, args.log, lang)
+    _timed_step(5, total_steps, "Tagging graph with logs", tag_graph_with_logs, graph, logs, lang)
+    summary = _timed_step(6, total_steps, "Summarizing test results", build_test_summary, graph)
+    (out_dir / "summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+    critical = _timed_step(7, total_steps, "Extracting critical paths", find_critical_paths, graph)
     prompt_path = out_dir / "llm_prompt.json"
     structured_prompt = {
         "meta": {
             "project_path": args.project,
             "log_path": args.log,
             "language": lang,
-            "graph": {
-                "nodes": graph.number_of_nodes(),
-                "edges": graph.number_of_edges(),
-            },
+            "graph": {"nodes": graph.number_of_nodes(), "edges": graph.number_of_edges()},
         },
         "summary": summary,
         "critical_paths": critical,
     }
-    prompt_path.write_text(
-        json.dumps(structured_prompt, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    prompt_path.write_text(json.dumps(structured_prompt, indent=2, ensure_ascii=False), encoding="utf-8")
     functions_path = out_dir / "function_summaries.json"
     extract_critical_functions(args.project, str(prompt_path), str(functions_path))
-    _assemble_and_maybe_call_api(
-        prompt_path, functions_path, args.model, args.dry_run, out_dir, args.project
-    )
+    _assemble_and_maybe_call_api(prompt_path, functions_path, args.model, args.dry_run, out_dir, args.project)
     _emit_report(args, out_dir)
 
 
@@ -236,41 +161,16 @@ def parse_args():
     sub = p.add_subparsers(dest="cmd", required=True)
 
     def add_common(sp):
-        sp.add_argument(
-            "-p", "--project", required=True, help="Path to your project directory"
-        )
-        sp.add_argument(
-            "-l",
-            "--log",
-            required=True,
-            help="Path to your test results file (XML/JSON/.trx)",
-        )
-        sp.add_argument(
-            "--lang",
-            choices=["python", "java", "csharp"],
-            help="Project language (auto-detected if omitted)",
-        )
-        sp.add_argument(
-            "--model", default="gpt-4o", help="AvalAI model name (e.g. gpt-4o-mini)"
-        )
-        sp.add_argument(
-            "--dry-run",
-            action="store_true",
-            help="Only build final prompt, skip AvalAI API call",
-        )
-        sp.add_argument(
-            "--open-report",
-            action="store_true",
-            help="Open generated report in default browser",
-        )
+        sp.add_argument("-p", "--project", required=True, help="Path to your project directory")
+        sp.add_argument("-l", "--log", required=True, help="Path to your test results file (XML/JSON/.trx)")
+        sp.add_argument("--lang", choices=["python", "java", "csharp"], help="Project language (auto-detected if omitted)")
+        sp.add_argument("--model", default="gpt-4o", help="AvalAI model name (e.g. gpt-4o-mini)")
+        sp.add_argument("--dry-run", action="store_true", help="Only build final prompt, skip AvalAI API call")
+        sp.add_argument("--open-report", action="store_true", help="Open generated report in default browser")
 
-    sp_full = sub.add_parser(
-        "full", help="Build graph from scratch, then run the whole pipeline"
-    )
+    sp_full = sub.add_parser("full", help="Build graph from scratch, then run the whole pipeline")
     add_common(sp_full)
-    sp_quick = sub.add_parser(
-        "quick", help="Reuse cached graph; only retag with new logs and continue"
-    )
+    sp_quick = sub.add_parser("quick", help="Reuse cached graph; only retag with new logs and continue")
     add_common(sp_quick)
     return p.parse_args()
 
