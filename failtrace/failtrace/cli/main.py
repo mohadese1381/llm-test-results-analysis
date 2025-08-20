@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 import json
 import webbrowser
-
+import importlib.resources as resources
 import networkx as nx
 
 from ..graph.builder import build_graph, detect_language
@@ -74,18 +74,15 @@ def _assemble_and_maybe_call_api(
 
 def _emit_report(args, out_dir: Path) -> None:
     try:
-        project_dir = Path.cwd()
-
-        report_dir = project_dir / "report"
+        report_dir = Path.cwd() / "report"
         report_dir.mkdir(parents=True, exist_ok=True)
 
-        template_path = report_dir / "report_template.html"
-
-        final = render_report_html(
-            project_path=args.project,
-            out_dir=str(out_dir),
-            template_path=str(template_path),
-        )
+        with resources.path("failtrace.static", "report_template.html") as tpl_path:
+            final = render_report_html(
+                project_path=args.project,
+                out_dir=str(out_dir),
+                template_path=str(tpl_path),
+            )
 
         logger.info(f"✔ Report generated: {final}")
 

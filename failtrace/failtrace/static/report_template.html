@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Test Analysis Report</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <div class="title-stack">
+          <h1 class="title">Test Analysis Report</h1>
+          <div class="meta-line">
+            <span id="projName" class="meta-item">—</span>
+            <span class="dot">•</span>
+            <span id="runDate" class="meta-item">—</span>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn" onclick="window.print()">Print / PDF</button>
+        </div>
+      </header>
+
+      <!-- compact KPI row -->
+      <section class="card card--kpis">
+        <div class="kpis">
+          <div class="kpi">
+            <h4>Total</h4>
+            <div class="v" id="kTotal">0</div>
+          </div>
+          <div class="kpi ok">
+            <h4>Passed</h4>
+            <div class="v" id="kPassed">0</div>
+          </div>
+          <div class="kpi err">
+            <h4>Failed</h4>
+            <div class="v" id="kFailed">0</div>
+          </div>
+          <div class="kpi warn">
+            <h4>Skipped</h4>
+            <div class="v" id="kSkipped">0</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card card-flex">
+          <div class="section-title"><h3>Tests Status</h3></div>
+          <div class="chart-area">
+            <canvas id="testsOverviewChart"></canvas>
+          </div>
+        </div>
+        <div class="card card-flex">
+          <div class="section-title"><h3>Failure Types</h3></div>
+          <div class="chart-area stick-bottom">
+            <canvas id="failureTypesChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- equal height row -->
+      <section class="grid grid--equal" style="margin-top: 16px">
+        <div class="card card-flex">
+          <div class="section-title"><h3>Insights</h3></div>
+          <p class="section-hint">
+            Concise, high-signal observations derived from the LLM analysis.
+          </p>
+          <div class="table-wrap table-wrap--scroll">
+            <table class="table table-compact" id="insightsTable">
+              <thead>
+                <tr>
+                  <th style="width: 30%">Insight</th>
+                  <th>Detail</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Risks as bubble chart (title cleaned, chart higher in card) -->
+        <div class="card card-flex card--risk">
+          <div class="section-title"><h3>Risk Matrix</h3></div>
+          <div class="chart-area">
+            <canvas id="riskBubblesChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top: 16px">
+        <div class="section-title"><h3>Failed Items</h3></div>
+        <div class="table-wrap table-wrap--fail-scroll" id="failWrap">
+          <table class="table table-fail" id="failTable">
+            <thead>
+              <tr>
+                <th style="min-width: 220px">Test</th>
+                <th style="min-width: 320px">Root Cause</th>
+                <th style="min-width: 240px">Location</th>
+                <th style="min-width: 280px">Error</th>
+                <th style="min-width: 260px">Suggested Fixes</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const REPORT = __REPORT_JSON__;
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
