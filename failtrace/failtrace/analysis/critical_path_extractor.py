@@ -1,6 +1,6 @@
 import networkx as nx
 from typing import Dict, List, Any, Tuple, Iterable
-from ..graph.graph_utils.path_enricher import enrich_path_with_metadata
+from ..graph.utils.path_enricher import enrich_path_with_metadata
 
 _EXCLUDED_SUBSTRS = (
     "/.venv/",
@@ -18,11 +18,6 @@ _DEFAULT_CUTOFF = 6
 
 
 def _keep_step(step: Dict[str, Any]) -> bool:
-    """
-    آیا این گام نگه داشته شود؟
-    - نودهای external حذف نمی‌شوند (برای تحلیل LLM لازم‌اند).
-    - هر گرهی که file آن داخل مسیرهای محیط/غیرسورس باشد حذف می‌شود.
-    """
     if not isinstance(step, dict):
         return False
 
@@ -49,11 +44,6 @@ def _unique(seq: Iterable[str]) -> List[str]:
 
 
 def _attach_origin_for_external_step(graph: nx.DiGraph, step: Dict[str, Any]) -> None:
-    """
-    برای نود external یک «origin» اضافه می‌کند:
-      - callers: فهرست فایل‌هایی که این نماد از آن‌ها فراخوانی شده (سرنخ import/alias).
-      - اگر caller فایلی نداشته باشد، حذف می‌شود.
-    """
     if step.get("type") != "external":
         return
 
@@ -93,18 +83,12 @@ def _augment_externals_with_origin(
 
 
 def _path_signature(path: List[Dict[str, Any]]) -> Tuple[str, ...]:
-    """امضای یکتا برای مسیر بر مبنای توالی node-id ها."""
     return tuple(
         step["node"] for step in path if isinstance(step, dict) and "node" in step
     )
 
 
 def _informativeness_score(path: List[Dict[str, Any]]) -> Tuple[int, int]:
-    """
-    نمره‌ی مفید بودن مسیر:
-    - تعداد گره‌های غیرتستی (بیشتر بهتر)
-    - طول مسیر (بیشتر بهتر)
-    """
     non_test = sum(1 for s in path if not s.get("is_test", False))
     return (non_test, len(path))
 
@@ -115,10 +99,7 @@ def _postprocess_paths(
     drop_short_downstream: bool,
     max_paths: int,
 ) -> List[List[Dict[str, Any]]]:
-    """
-    Dedup + Filter + Sort + Cap
-    drop_short_downstream: اگر True باشد، مسیرهای با طول < 2 حذف می‌شوند.
-    """
+
     uniq: Dict[Tuple[str, ...], List[Dict[str, Any]]] = {}
 
     for p in paths:
@@ -141,13 +122,7 @@ def find_critical_paths(
     cutoff: int = _DEFAULT_CUTOFF,
     max_paths_per_direction: int = _DEFAULT_MAX_PATHS_PER_DIR,
 ) -> Dict[str, Dict[str, List[List[Dict[str, Any]]]]]:
-    """
-    مسیرهای بحرانی برای تست‌های شکست‌خورده را استخراج می‌کند (upstream/downstream)
-    و خروجی enriched برمی‌گرداند. این نسخه:
-      - external ها را نگه می‌دارد و «origin» برایشان اضافه می‌کند.
-      - مسیرهای تکراری را حذف و بهترین‌ها را نگه می‌دارد.
-      - cutoff و سقف مسیرها قابل‌پیکربندی‌اند.
-    """
+
     critical_paths: Dict[str, Dict[str, List[List[Dict[str, Any]]]]] = {}
 
     failed_tests = [

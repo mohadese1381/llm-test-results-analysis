@@ -4,15 +4,7 @@ import re
 
 
 def _ensure_python_filepath(path_part: str) -> str:
-    """
-    مسیر ماژول/فایل پایتون را به مسیر فایل استاندارد تبدیل می‌کند و پسوند .py را تضمین می‌کند.
 
-    ورودی‌های قابل پشتیبانی:
-      - 'tests.smoke.test_basic'        -> 'tests/smoke/test_basic.py'
-      - 'tests/smoke/test_basic'        -> 'tests/smoke/test_basic.py'
-      - 'tests\\smoke\\test_basic.py'   -> 'tests/smoke/test_basic.py'
-      - 'tests/smoke/test_basic.py'     -> همان (پس از نرمال‌سازی اسلش‌ها)
-    """
     if not isinstance(path_part, str) or not path_part.strip():
         return "unknown.py"
 
@@ -30,13 +22,6 @@ def _ensure_python_filepath(path_part: str) -> str:
 
 
 def _split_name(raw: str) -> Tuple[str, List[str]]:
-    """
-    یک نام خام لاگ را به (path_part, extra_parts) می‌شکند.
-    اولویت جداکننده‌ها:
-      1) '::'  (pytest/xUnit-like)
-      2) '#'   (JUnit 5)
-      3) آخرین '.' به عنوان جداکننده‌ی method از مسیر/کلاس (Java/C#)
-    """
     s = (raw or "").strip().replace("\\", "/")
 
     if "::" in s:
@@ -56,19 +41,6 @@ def _split_name(raw: str) -> Tuple[str, List[str]]:
 
 
 def normalize_test_name(raw_name: str, lang: str) -> str:
-    """
-    Normalize test names so they match graph node-IDs.
-
-    • Python  : tests.smoke.test_basic::TestClass::test_m → tests/smoke/test_basic.py::TestClass::test_m
-                 tests/smoke/test_basic.py::test_m[param] → همان
-
-    • Java    : com.acme.BookTest#testTitle              → BookTest.java::BookTest::testTitle
-                 com.acme.BookTest.testTitle             → BookTest.java::BookTest::testTitle
-                 src/test/java/com/acme/BookTest.java#t  → BookTest.java::BookTest::t
-
-    • C#      : Namespace.Sub.Class.Method               → Class.cs::Class::Method
-                 Project/Tests/Class1.cs::Method         → Class1.cs::Class1::Method
-    """
     if not raw_name or not isinstance(raw_name, str):
         return raw_name
 
@@ -77,14 +49,12 @@ def normalize_test_name(raw_name: str, lang: str) -> str:
 
     path_part = path_part.replace("\\", "/").strip()
 
-    # -------------------- Python --------------------
     if lang_lc == "python":
         filename = _ensure_python_filepath(path_part)
         parts: List[str] = [filename]
         parts.extend(p for p in extra_parts if p)
         return "::".join(parts)
 
-    # -------------------- Java / C# --------------------
     lower_path = path_part.lower()
     has_file_java = lower_path.endswith(".java")
     has_file_cs = lower_path.endswith(".cs")

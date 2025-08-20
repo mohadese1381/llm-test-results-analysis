@@ -7,13 +7,8 @@ import networkx as nx
 
 
 def _extract_file_from_candidate(candidate: str) -> str:
-    """
-    از رشته‌ای مانند 'src/main/java/Foo.java>42' یا 'C:>path>Bar.cs>15'
-    فقط بخش مسیر فایل را جدا می‌کند (بدون شماره خط).
-    """
     if not candidate:
         return ""
-    # حذف شماره خط انتهایی (">NNN")
     parts = candidate.split(">")
     if parts and parts[-1].isdigit():
         parts = parts[:-1]
@@ -25,17 +20,7 @@ def rank_candidates_by_graph(
     failed_node_id: str,
     candidates: List[str],
 ) -> List[str]:
-    """
-    رتبه‌بندی candidates بر اساس فاصله آن‌ها در گراف از نود تست شکست‌خورده.
 
-    ورودی‌ها:
-        graph           : گراف جهت‌دار nx.DiGraph (ساختار موجود پروژه)
-        failed_node_id  : شناسه‌ی گره تست شکست‌خورده
-        candidates      : لیستی از رشته‌های 'file>line' از Heuristic Locator
-
-    خروجی:
-        همان candidates به ترتیب صعودی فاصله (پایدار، deterministic)
-    """
     if not graph or not failed_node_id or not candidates:
         return candidates
 

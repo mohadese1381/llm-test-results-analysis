@@ -3,28 +3,22 @@ import networkx as nx
 from typing import List, Dict
 from ..utils.normalize import normalize_test_name
 from ..utils.logs_parser import TestLogParser
-from .locator import locate_from_error 
+from .locator import locate_from_error
 
 ANSI_PATTERN = re.compile(r"(?:\x1B|\#x1B)\[[0-9;]*[A-Za-z]")
 
 
 def _strip_ansi(text: str) -> str:
-    """حذف سکانس‌های ANSI برای رنگ‌دهی ترمینال."""
     if not isinstance(text, str):
         return text
     return ANSI_PATTERN.sub("", text)
 
 
 def load_test_logs(log_path: str, lang: str) -> List[Dict]:
-    """
-    بارگذاری لاگ‌های تست برای زبان مشخص (python, java, csharp).
-    با پارسر مناسب (json/xml/trx) خروجی استاندارد {'name','status','message'} برمی‌گرداند.
-    اینجا ANSI escape sequences حذف می‌شوند تا در مراحل بعدی وارد نشوند.
-    """
+
     try:
         parser = TestLogParser.get_parser(lang, log_path)
         logs = parser.load(log_path)
-        # پاک‌سازی ANSI از همان ابتدا
         for log in logs:
             if "message" in log and log["message"]:
                 log["message"] = _strip_ansi(log["message"])
@@ -35,7 +29,6 @@ def load_test_logs(log_path: str, lang: str) -> List[Dict]:
 
 
 def _strip_param_suffix(func_name: str) -> str:
-    """حذف پسوندهای پارامتری از انتهای نام تابع."""
     if not isinstance(func_name, str):
         return func_name
     return re.sub(r"(?:\[[^\]]*\]|\([^\)]*\))+$", "", func_name)
@@ -44,7 +37,6 @@ def _strip_param_suffix(func_name: str) -> str:
 def tag_graph_with_logs(
     graph: nx.DiGraph, test_logs: List[Dict], lang: str
 ) -> nx.DiGraph:
-    """برچسب‌گذاری گره‌های گراف بر اساس لاگ تست‌ها."""
     matched = 0
     unmatched = []
     lang_lc = (lang or "").lower()
@@ -59,7 +51,6 @@ def tag_graph_with_logs(
 
         normalized = normalize_test_name(raw_name, lang_lc)
 
-        # نسخه بدون پسوند پارامتری
         parts = normalized.split("::")
         if parts:
             func_original = parts[-1]
@@ -73,7 +64,6 @@ def tag_graph_with_logs(
 
         matched_node = None
 
-        # انواع تطبیق
         if normalized in graph.nodes:
             matched_node = normalized
         if matched_node is None and normalized_stripped in graph.nodes:
@@ -108,11 +98,9 @@ def tag_graph_with_logs(
         if matched_node:
             graph.nodes[matched_node]["test_status"] = status
             if message:
-                # ✅ حذف ANSI قبل از ذخیره
                 clean_msg = _strip_ansi(message)
                 graph.nodes[matched_node]["error_message"] = clean_msg
 
-                # ✅ مکان‌یابی هیورستیک و ذخیره
                 heur = locate_from_error(clean_msg, lang_lc)
                 graph.nodes[matched_node]["heuristic_locations"] = heur.get(
                     "heuristic", []

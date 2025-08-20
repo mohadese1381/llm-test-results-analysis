@@ -32,13 +32,7 @@ def extract_docstring(file_path: str, func_name: str) -> str:
 
 
 def summarize_graph_node(graph: nx.DiGraph, node: str) -> Dict:
-    """
-    خلاصه‌سازی اطلاعات یک گره:
-    - نوع گره (تابع، کلاس، تست)
-    - موقعیت (فایل و خط)
-    - داک‌استرینگ
-    """
-    data = graph.nodes[node]    
+    data = graph.nodes[node]
     summary = {
         "node": node,
         "type": data.get("type", "unknown"),
@@ -61,24 +55,22 @@ def summarize_graph_node(graph: nx.DiGraph, node: str) -> Dict:
 def summarize_critical_paths(
     graph: nx.DiGraph, critical_paths: Dict[str, Dict[str, List[List[Dict]]]]
 ) -> Dict:
-    """
-    ساخت خلاصه‌ای برای مسیرهای بحرانی:
-    شامل اطلاعات کامل گره‌ها در مسیر (docstring + meta)
-    """
+
     summary = {}
 
     for failed_node, paths in critical_paths.items():
         summary[failed_node] = {"upstream": [], "downstream": []}
 
         for path in paths.get("upstream", []):
-            summarized_path = [summarize_graph_node(graph, node["node"]) for node in path]
+            summarized_path = [
+                summarize_graph_node(graph, node["node"]) for node in path
+            ]
             summary[failed_node]["upstream"].append(summarized_path)
 
         for path in paths.get("downstream", []):
-            summarized_path = [summarize_graph_node(graph, node["node"]) for node in path]
+            summarized_path = [
+                summarize_graph_node(graph, node["node"]) for node in path
+            ]
             summary[failed_node]["downstream"].append(summarized_path)
 
-    # Debugging output
-    """ print(f"[summarizer] {len(summary)} critical test summaries prepared.") """
     return summary
-

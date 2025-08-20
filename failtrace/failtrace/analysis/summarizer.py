@@ -3,9 +3,6 @@ from typing import Dict, Any, List
 
 
 def build_test_summary(graph: nx.DiGraph) -> Dict[str, Any]:
-    """
-    ساخت خلاصه‌ای از وضعیت تست‌ها و گره‌های شکست‌خورده
-    """
     summary = {
         "total_tests": 0,
         "executed_tests": 0,

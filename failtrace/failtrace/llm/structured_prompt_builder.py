@@ -3,7 +3,7 @@ import os
 import math
 from typing import Dict, List, Any, Tuple
 
-from ..graph.graph_builder import build_graph
+from ..graph.builder import build_graph
 from ..utils.file_ops import load_json
 from ..analysis.mapper import load_test_logs, tag_graph_with_logs
 from ..analysis.summarizer import build_test_summary

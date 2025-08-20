@@ -8,51 +8,72 @@ from tree_sitter import Language, Parser
 import xml.etree.ElementTree as ET
 import logging
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Tree-sitter init
-# ─────────────────────────────────────────────────────────────────────────────
 try:
     from tree_sitter_c_sharp import language as _cs_capsule
+
     CSHARP_LANG = Language(_cs_capsule())
 except ImportError:
     from tree_sitter_languages import get_language  # type: ignore
+
     CSHARP_LANG = get_language("c_sharp")
 PARSER = Parser(CSHARP_LANG)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Logging
-# ─────────────────────────────────────────────────────────────────────────────
+
 logger = logging.getLogger(__name__)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Filters
-# ─────────────────────────────────────────────────────────────────────────────
+
 _EXCLUDED_DIRS: Set[str] = {
-    "bin", "obj", ".vs", ".git", ".github", ".idea", ".vscode",
-    "packages", ".nuget", "TestResults", "Coverage", ".sonarqube",
-    ".azure-pipelines", ".artifacts", "out", "build", "target", "Generated",
+    "bin",
+    "obj",
+    ".vs",
+    ".git",
+    ".github",
+    ".idea",
+    ".vscode",
+    "packages",
+    ".nuget",
+    "TestResults",
+    "Coverage",
+    ".sonarqube",
+    ".azure-pipelines",
+    ".artifacts",
+    "out",
+    "build",
+    "target",
+    "Generated",
 }
 _EXCLUDED_FILE_SUFFIXES_CI = (
-    ".g.cs", ".g.i.cs", ".designer.cs", ".generated.cs", "assemblyinfo.cs",
+    ".g.cs",
+    ".g.i.cs",
+    ".designer.cs",
+    ".generated.cs",
+    "assemblyinfo.cs",
 )
+
 
 def _contains_excluded_dir(path: Path) -> bool:
     return any(part.lower() in _EXCLUDED_DIRS for part in path.parts)
 
+
 def _is_excluded_file(name: str) -> bool:
     return name.lower().endswith(_EXCLUDED_FILE_SUFFIXES_CI)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Test detection
-# ─────────────────────────────────────────────────────────────────────────────
+
 TEST_ATTRS = {
-    "Fact", "Theory", "Test", "TestCase", "TestCaseSource", "ParameterizedTest",
-    "TestFixture", "TestMethod", "DataTestMethod", "TestClass", "Ignore",
+    "Fact",
+    "Theory",
+    "Test",
+    "TestCase",
+    "TestCaseSource",
+    "ParameterizedTest",
+    "TestFixture",
+    "TestMethod",
+    "DataTestMethod",
+    "TestClass",
+    "Ignore",
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
-# AST helpers
-# ─────────────────────────────────────────────────────────────────────────────
+
 def _walk(node):
     cursor = node.walk()
     done = False
@@ -69,8 +90,12 @@ def _walk(node):
             if cursor.goto_next_sibling():
                 break
 
+
 def _text(src: bytes, node) -> str:
-    return src[node.start_byte : node.end_byte].decode("utf-8", "ignore") if node else ""
+    return (
+        src[node.start_byte : node.end_byte].decode("utf-8", "ignore") if node else ""
+    )
+
 
 def _first(node, typ: str):
     for i in range(getattr(node, "child_count", 0)):
@@ -79,16 +104,13 @@ def _first(node, typ: str):
             return ch
     return None
 
+
 def _decl_name(node, src: bytes) -> Optional[str]:
     nm = node.child_by_field_name("name") or _first(node, "identifier")
     return _text(src, nm).strip() if nm else None
 
+
 def _namespace(root, src: bytes) -> str:
-    """
-    پشتیبانی از:
-      - namespace_declaration
-      - file_scoped_namespace_declaration (C# 10+)
-    """
     for n in _walk(root):
         if n.type in ("namespace_declaration", "file_scoped_namespace_declaration"):
             nm = n.child_by_field_name("name")
@@ -96,17 +118,25 @@ def _namespace(root, src: bytes) -> str:
             return txt or "<global>"
     return "<global>"
 
+
 def _enclosing_type(node, src: bytes) -> Optional[str]:
     cur = node.parent
     while cur:
-        if cur.type in ("class_declaration", "struct_declaration", "interface_declaration", "record_declaration"):
+        if cur.type in (
+            "class_declaration",
+            "struct_declaration",
+            "interface_declaration",
+            "record_declaration",
+        ):
             return _decl_name(cur, src)
         cur = cur.parent
     return None
 
+
 def _method_name(node, src: bytes) -> Optional[str]:
     nm = node.child_by_field_name("name") or _first(node, "identifier")
     return _text(src, nm).strip() if nm else None
+
 
 def _is_async(node, src: bytes) -> bool:
     for i in range(node.child_count):
@@ -115,17 +145,22 @@ def _is_async(node, src: bytes) -> bool:
             return True
     return False
 
+
 def _param_count(node) -> int:
     pl = node.child_by_field_name("parameter_list") or _first(node, "parameter_list")
     if not pl:
         return 0
     return sum(1 for ch in pl.children if ch.type == "parameter")
 
+
 def _arg_count(inv_node) -> int:
-    al = inv_node.child_by_field_name("argument_list") or _first(inv_node, "argument_list")
+    al = inv_node.child_by_field_name("argument_list") or _first(
+        inv_node, "argument_list"
+    )
     if not al:
         return 0
     return sum(1 for ch in al.children if ch.type == "argument")
+
 
 def _identifier_deep(node, src: bytes) -> Optional[str]:
     if not node:
@@ -151,7 +186,9 @@ def _identifier_deep(node, src: bytes) -> Optional[str]:
                 last = v
         return last
     if t == "invocation_expression":
-        fn = node.child_by_field_name("function") or node.child_by_field_name("expression")
+        fn = node.child_by_field_name("function") or node.child_by_field_name(
+            "expression"
+        )
         return _identifier_deep(fn, src)
     if t == "object_creation_expression":
         typ = node.child_by_field_name("type")
@@ -163,11 +200,17 @@ def _identifier_deep(node, src: bytes) -> Optional[str]:
             last = v
     return last
 
+
 def _return_type(node, src: bytes) -> str:
     if node.type == "constructor_declaration":
         return "void"
-    t = node.child_by_field_name("type") or _first(node, "predefined_type") or _first(node, "identifier")
+    t = (
+        node.child_by_field_name("type")
+        or _first(node, "predefined_type")
+        or _first(node, "identifier")
+    )
     return _text(src, t).strip() if t else "void"
+
 
 def _has_test_attribute_on_type(node, src: bytes) -> bool:
     for i in range(node.child_count):
@@ -180,6 +223,7 @@ def _has_test_attribute_on_type(node, src: bytes) -> bool:
                     if name and _text(src, name).split(".")[-1] in TEST_ATTRS:
                         return True
     return False
+
 
 def _is_test_method(node, src: bytes, class_is_test: bool) -> bool:
     for i in range(node.child_count):
@@ -197,6 +241,7 @@ def _is_test_method(node, src: bytes, class_is_test: bool) -> bool:
     nm = _method_name(node, src) or ""
     return nm.lower().startswith(("test", "should_", "when_"))
 
+
 def _collect_usings(root, src: bytes) -> List[str]:
     usings: List[str] = []
     for n in _walk(root):
@@ -208,9 +253,7 @@ def _collect_usings(root, src: bytes) -> List[str]:
                     usings.append(txt)
     return usings
 
-# ─────────────────────────────────────────────────────────────────────────────
-# .csproj references (projects & nuget)
-# ─────────────────────────────────────────────────────────────────────────────
+
 def _parse_csproj_refs(project_path: Path) -> Tuple[Set[str], Set[str]]:
     proj_refs: Set[str] = set()
     pkg_refs: Set[str] = set()
@@ -231,9 +274,7 @@ def _parse_csproj_refs(project_path: Path) -> Tuple[Set[str], Set[str]]:
             logger.warning(f"Failed to parse {csproj}: {e}")
     return proj_refs, pkg_refs
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Main
-# ─────────────────────────────────────────────────────────────────────────────
+
 def extract_csharp_graph(project_path: str) -> nx.DiGraph:
     base = Path(project_path)
     graph = nx.DiGraph()
@@ -266,7 +307,11 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
             class_is_test: Dict[str, bool] = {}
 
             for n in _walk(root):
-                if n.type in ("class_declaration", "interface_declaration", "record_declaration"):
+                if n.type in (
+                    "class_declaration",
+                    "interface_declaration",
+                    "record_declaration",
+                ):
                     cn = _decl_name(n, src)
                     if not cn:
                         continue
@@ -353,10 +398,6 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
         return name_index.get(simple, []) or []
 
     def _update_external_node(ext_key: str, origin: Dict[str, object]) -> None:
-        """
-        origins را روی نود خارجی به‌صورت تجمیعی نگه می‌داریم و یک نمای لیستی
-        مرتب‌شده بر اساس count (نزولی) نیز اضافه می‌کنیم.
-        """
         node = graph.nodes[ext_key]
         counts: Dict[str, int] = node.get("origin_counts", {})
         key = f"{origin.get('file')}|{origin.get('namespace')}|{origin.get('kind')}|{origin.get('symbol')}"
@@ -366,12 +407,16 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
         parts: List[Dict[str, object]] = []
         for k, c in sorted(counts.items(), key=lambda kv: kv[1], reverse=True):
             f, ns, kind, sym = k.split("|", 3)
-            parts.append({"file": f, "namespace": ns, "kind": kind, "symbol": sym, "count": c})
+            parts.append(
+                {"file": f, "namespace": ns, "kind": kind, "symbol": sym, "count": c}
+            )
         node["origins"] = parts
 
     def pass2(path: Path):
         edges: List[Tuple[str, str]] = []
-        ex_edges: List[Tuple[str, str, Dict[str, object]]] = []  # (caller, ext_key, origin)
+        ex_edges: List[Tuple[str, str, Dict[str, object]]] = (
+            []
+        )  # (caller, ext_key, origin)
         try:
             src = path.read_bytes()
             tree = PARSER.parse(src)
@@ -382,7 +427,10 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
 
             def _caller_node(n):
                 p = n
-                while p and p.type not in ("method_declaration", "constructor_declaration"):
+                while p and p.type not in (
+                    "method_declaration",
+                    "constructor_declaration",
+                ):
                     p = p.parent
                 if not p:
                     return None, None
@@ -392,7 +440,9 @@ def extract_csharp_graph(project_path: str) -> nx.DiGraph:
 
             for n in _walk(root):
                 if n.type == "invocation_expression":
-                    fn = n.child_by_field_name("function") or n.child_by_field_name("expression")
+                    fn = n.child_by_field_name("function") or n.child_by_field_name(
+                        "expression"
+                    )
                     callee = _identifier_deep(fn, src)
                     argc = _arg_count(n)
                     cm, ct = _caller_node(n)

@@ -4,13 +4,9 @@ from collections import defaultdict
 
 
 def _top_origin_from_node(node_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """
-    اگر روی نود خارجی origins (لیست تجمیع‌شده با count) موجود باشد،
-    پرتکرارترین را برگردان.
-    """
+
     origins = node_data.get("origins")
     if isinstance(origins, list) and origins:
-        # در csharp_graph، origins به‌صورت count-desc مرتب می‌شود
         return dict(origins[0])
     return None
 
@@ -18,17 +14,7 @@ def _top_origin_from_node(node_data: Dict[str, Any]) -> Optional[Dict[str, Any]]
 def enrich_path_with_metadata(
     graph: nx.DiGraph, path: List[Any]
 ) -> List[Dict[str, Any]]:
-    """
-    غنی‌سازی مسیرها با متادیتای گراف و نگاشت external ها به نودهای داخلی (در صورت امکان).
-    خروجی هر استپ:
-      - node: شناسه نهایی نود (در صورت resolve شدن، نود داخلی؛ در غیر این‌صورت همان external)
-      - type, file, line, is_test, status, docstring
-      - origin: اگر نود external باشد، از edge می‌خوانیم؛ اگر نبود از top origins نود
-      - external_key: اگر external بود کلید اصلی
-      - resolved_from_external: اگر به داخلی map شد
-    """
 
-    # --- 1) ایندکس سبک برای رزولوشن سریع:  simple_name -> [node_ids]
     suffix_index: DefaultDict[str, List[str]] = defaultdict(list)
     for nid, data in graph.nodes(data=True):
         if data.get("type") in {"function", "test"} and isinstance(nid, str):
@@ -39,13 +25,7 @@ def enrich_path_with_metadata(
         return node_any.get("node") if isinstance(node_any, dict) else node_any
 
     def _external_simple_name(key: str) -> str:
-        """
-        استخراج نام ساده از کلیدهای external متداول:
-          - 'external::<name>' / 'external::<name>/<argc>' -> <name>
-          - 'project::<ProjName>'                           -> <ProjName>
-          - 'nuget::<PackageName>'                          -> <PackageName>
-          - bare                                           -> همان
-        """
+
         if not isinstance(key, str):
             return ""
         if key.startswith("external::"):
@@ -76,16 +56,11 @@ def enrich_path_with_metadata(
             candidates = suffix_index.get(simple, []) if simple else []
 
             if candidates:
-                node_id = candidates[
-                    0
-                ]  # سیاست انتخاب را می‌توان بعداً غنی‌تر کرد (NS/پارامتر و…)
+                node_id = candidates[0]
                 resolved_from_external = True
                 data = graph.nodes.get(node_id, {})
             else:
-                # unresolved external: خود external را نگه می‌داریم
                 data = data0
-
-                # سعی کن origin را از edge قبلی بخوانی (caller -> external)
                 if (
                     prev_node_id
                     and isinstance(prev_node_id, str)
@@ -94,13 +69,11 @@ def enrich_path_with_metadata(
                     ed = graph.get_edge_data(prev_node_id, external_key) or {}
                     origin = ed.get("origin")
 
-                # اگر edge-origin نبود، از top origins روی خود نود استفاده کن
                 if origin is None:
                     origin = _top_origin_from_node(data0)
         else:
             data = data0
 
-        # در حالت resolve‌شده، هنوز هم اگر origin از edge وجود داشت، نشان بده
         if origin is None and isinstance(node_id, str) and external_key:
             if prev_node_id and graph.has_edge(prev_node_id, external_key):
                 ed = graph.get_edge_data(prev_node_id, external_key) or {}

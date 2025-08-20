@@ -80,12 +80,9 @@ class FunctionCollector(cst.CSTVisitor):
         self.current_function: Optional[str] = None
         self.is_test_file = is_test_file
 
-        # import alias map
         self.imports: Dict[str, str] = {}
-        # local var -> ClassName per function
         self.local_var_types_stack: List[Dict[str, str]] = []
 
-    # helpers
     def _node_id(self, parts: List[str]) -> str:
         return "::".join(parts)
 
@@ -167,7 +164,6 @@ class FunctionCollector(cst.CSTVisitor):
             cands = self._resolve_internal_targets_by_suffix(method)
         return self._prefer_candidates(cands)
 
-    # imports & assigns
     def visit_Import(self, node: cst.Import) -> None:
         for alias in node.names:
             name = alias.name
@@ -204,7 +200,6 @@ class FunctionCollector(cst.CSTVisitor):
         except Exception:
             pass
 
-    # classes & functions
     def visit_ClassDef(self, node: cst.ClassDef):
         self.current_class = node.name.value
 
@@ -246,7 +241,6 @@ class FunctionCollector(cst.CSTVisitor):
         if self.local_var_types_stack:
             self.local_var_types_stack.pop()
 
-    # calls
     def visit_Call(self, node: cst.Call):
         if not self.current_function:
             return
@@ -258,7 +252,7 @@ class FunctionCollector(cst.CSTVisitor):
         candidates = self._match_candidates(chain, var_types)
         if candidates:
             for tgt in candidates:
-                if tgt == self.current_function:  # avoid self-edge
+                if tgt == self.current_function:
                     continue
                 if not self.graph.has_edge(self.current_function, tgt):
                     self.graph.add_edge(self.current_function, tgt)

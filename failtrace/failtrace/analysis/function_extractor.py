@@ -10,16 +10,12 @@ from typing import Dict, Tuple, Set, List, Optional
 
 __all__ = ["extract_critical_functions"]
 
-# --- Optional Java parser (safe fallback) ---
 try:
-    import javalang  # type: ignore
+    import javalang
 except ImportError:
     javalang = None
     print("[!] javalang not installed. Java parsing will be limited to Python/C#.")
 
-# =========================
-# Helpers
-# =========================
 
 def _read_text(path: str) -> Optional[str]:
     try:
@@ -28,6 +24,7 @@ def _read_text(path: str) -> Optional[str]:
     except Exception as e:
         print(f"[!] Cannot read {path}: {e}")
         return None
+
 
 def _find_csharp_signature_index(lines: List[str], start_idx: int) -> int:
     i = start_idx
@@ -41,16 +38,16 @@ def _find_csharp_signature_index(lines: List[str], start_idx: int) -> int:
         i += 1
     return start_idx
 
+
 def _find_attribute_block_start(lines: List[str], sig_idx: int) -> int:
     j = sig_idx - 1
     while j >= 0 and lines[j].lstrip().startswith("["):
         j -= 1
     return j + 1
 
+
 def _brace_slice(lines: List[str], start_idx: int) -> str:
-    """
-    برش بدنهٔ متد/ctor (با احتساب بلاک‌های attribute قبل از امضا)
-    """
+
     if not lines:
         return ""
 
@@ -67,9 +64,9 @@ def _brace_slice(lines: List[str], start_idx: int) -> str:
         buf.append(line)
 
         st = line.strip()
-        if "=>" in line:  # expression-bodied
+        if "=>" in line:
             break
-        if st.endswith(";"):  # امضای اینترفیس یا متد بدون بدنه
+        if st.endswith(";"):
             break
 
         if "{" in line:
@@ -84,6 +81,7 @@ def _brace_slice(lines: List[str], start_idx: int) -> str:
 
     prefix = "".join(lines[attr_start:sig_idx])
     return (prefix + "".join(buf)).rstrip()
+
 
 def _split_test_qualified_name(raw: str) -> Tuple[str, str]:
     s = (raw or "").strip()
@@ -104,6 +102,7 @@ def _split_test_qualified_name(raw: str) -> Tuple[str, str]:
 
     return "UnknownClass", s
 
+
 def _find_candidate_files(project_path: str, filename: str) -> List[str]:
     result = []
     for root, _, files in os.walk(project_path):
@@ -111,6 +110,7 @@ def _find_candidate_files(project_path: str, filename: str) -> List[str]:
             if f.lower() == filename.lower():
                 result.append(os.path.join(root, f))
     return result
+
 
 def _find_by_relpath_suffix(project_path: str, relpath_like: str) -> Optional[str]:
     if not relpath_like:
@@ -127,6 +127,7 @@ def _find_by_relpath_suffix(project_path: str, relpath_like: str) -> Optional[st
                 best_len = len(target_suffix)
     return best
 
+
 def _infer_lang_from_path(project_path: str) -> str:
     exts = set()
     for root, _, files in os.walk(project_path):
@@ -140,12 +141,10 @@ def _infer_lang_from_path(project_path: str) -> str:
         return "python"
     return "unknown"
 
+
 def _strip_params(name: str) -> str:
     return re.sub(r"(\[.*?\]|\(.*?\)|\{.*?\})$", "", name).strip()
 
-# =========================
-# Python extractor
-# =========================
 
 class _PyClassFuncVisitor(ast.NodeVisitor):
     def __init__(self, lines: List[str]):
@@ -164,11 +163,16 @@ class _PyClassFuncVisitor(ast.NodeVisitor):
         doc = ast.get_docstring(node) or ""
         start = node.lineno
         end = getattr(node, "end_lineno", None)
-        code = "\n".join(self.lines[start - 1 : end]) if end else "\n".join(self.lines[start - 1 :])
+        code = (
+            "\n".join(self.lines[start - 1 : end])
+            if end
+            else "\n".join(self.lines[start - 1 :])
+        )
         self.out[full] = {"line": start, "docstring": doc.strip(), "code": code.strip()}
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         self.visit_FunctionDef(node)
+
 
 def extract_python_functions(file_path: str) -> Dict[str, Dict[str, str]]:
     text = _read_text(file_path)
@@ -183,9 +187,6 @@ def extract_python_functions(file_path: str) -> Dict[str, Dict[str, str]]:
     visitor.visit(tree)
     return visitor.out
 
-# =========================
-# Java extractor
-# =========================
 
 def extract_java_functions(file_path: str) -> Dict[str, Dict[str, str]]:
     out: Dict[str, Dict[str, str]] = {}
@@ -203,8 +204,6 @@ def extract_java_functions(file_path: str) -> Dict[str, Dict[str, str]]:
         return out
 
     lines = text.splitlines()
-
-    # Classes
     for _, cls in tree.filter(javalang.tree.ClassDeclaration):
         cls_name = cls.name
         for m in getattr(cls, "methods", []):
@@ -220,7 +219,6 @@ def extract_java_functions(file_path: str) -> Dict[str, Dict[str, str]]:
             full = f"{cls_name}::{cls_name}"
             out[full] = {"line": start, "docstring": "", "code": code}
 
-    # Interfaces
     for _, interface in tree.filter(javalang.tree.InterfaceDeclaration):
         cls_name = interface.name
         for m in getattr(interface, "methods", []):
@@ -232,9 +230,6 @@ def extract_java_functions(file_path: str) -> Dict[str, Dict[str, str]]:
 
     return out
 
-# =========================
-# C# extractor
-# =========================
 
 _CS_TYPE_RE = re.compile(r"\b(class|struct|record|interface)\s+([A-Za-z_]\w*)")
 _CS_METHOD_RE = re.compile(
@@ -270,6 +265,7 @@ _CS_CTOR_RE = re.compile(
     re.MULTILINE,
 )
 
+
 def extract_csharp_functions(file_path: str) -> Dict[str, Dict[str, str]]:
     text = _read_text(file_path)
     if text is None:
@@ -297,7 +293,9 @@ def extract_csharp_functions(file_path: str) -> Dict[str, Dict[str, str]]:
 
     out: Dict[str, Dict[str, str]] = {}
 
-    method_pattern = re.compile(_CS_METHOD_RE.pattern, re.MULTILINE | re.DOTALL | re.VERBOSE)
+    method_pattern = re.compile(
+        _CS_METHOD_RE.pattern, re.MULTILINE | re.DOTALL | re.VERBOSE
+    )
     for mm in method_pattern.finditer(text):
         mname_full = mm.group("name")
         mname = mname_full.split(".")[-1]
@@ -307,7 +305,9 @@ def extract_csharp_functions(file_path: str) -> Dict[str, Dict[str, str]]:
         code = _brace_slice(lines, max(0, start_line - 1))
         out[full] = {"line": start_line, "docstring": "", "code": code}
 
-    ctor_pattern = re.compile(_CS_CTOR_RE.pattern, re.MULTILINE | re.DOTALL | re.VERBOSE)
+    ctor_pattern = re.compile(
+        _CS_CTOR_RE.pattern, re.MULTILINE | re.DOTALL | re.VERBOSE
+    )
     for cm in ctor_pattern.finditer(text):
         owner = _owner_type_at(cm.start())
         if not owner:
@@ -321,15 +321,13 @@ def extract_csharp_functions(file_path: str) -> Dict[str, Dict[str, str]]:
 
     return out
 
-# =========================
-# Dispatch
-# =========================
 
 LANGUAGE_EXTRACTORS = {
     ".py": extract_python_functions,
     ".java": extract_java_functions,
     ".cs": extract_csharp_functions,
 }
+
 
 def extract_functions_from_file(file_path: str) -> Dict[str, Dict[str, str]]:
     ext = os.path.splitext(file_path)[1].lower()
@@ -343,9 +341,6 @@ def extract_functions_from_file(file_path: str) -> Dict[str, Dict[str, str]]:
         print(f"[!] Failed to extract from {file_path}: {e}")
         return {}
 
-# =========================
-# Guess from failed tests
-# =========================
 
 def _guess_targets_from_failed_tests(summary: Dict, lang: str) -> List[Tuple[str, str]]:
     out: List[Tuple[str, str]] = []
@@ -377,7 +372,11 @@ def _guess_targets_from_failed_tests(summary: Dict, lang: str) -> List[Tuple[str
             if "::" in raw:
                 parts = raw.split("::")
                 file_guess = parts[0].replace("\\", "/")
-                func_guess = "::".join(_strip_params(p) for p in parts[1:]) if len(parts) > 1 else ""
+                func_guess = (
+                    "::".join(_strip_params(p) for p in parts[1:])
+                    if len(parts) > 1
+                    else ""
+                )
                 if file_guess.endswith(".py") and func_guess:
                     out.append((func_guess, file_guess))
             else:
@@ -390,66 +389,44 @@ def _guess_targets_from_failed_tests(summary: Dict, lang: str) -> List[Tuple[str
                         out.append((func, file_guess))
     return out
 
-# =========================
-# Matching helpers
-# =========================
 
 def _file_from_func_id(func_id: str) -> Optional[str]:
-    """
-    func_id نمونه:
-      - "<global>::path/to/File.cs::Class::Method"
-      - "pkg/sub/File.java::Class::method"
-    """
+
     if not isinstance(func_id, str) or "::" not in func_id:
         return None
     parts = func_id.split("::")
-    # اگر با namespace شروع شده باشد، part[1] فایل است؛ در غیر اینصورت part[0]
     if parts[0].startswith("<") and len(parts) >= 2:
         return parts[1]
     return parts[0]
 
+
 def _match_extracted_key(extracted_keys: List[str], func_id: str) -> Optional[str]:
-    """
-    extracted_keys پترن‌هایی مثل "Class::Method" دارد.
-    func_id معمولا "...::Class::Method" است.
-    """
-    # کلاس و متد هدف از func_id
+
     toks = func_id.split("::")
     target_method = toks[-1] if toks else func_id
     target_class = toks[-2] if len(toks) >= 2 else ""
 
-    # اولویت 1: تطابق دقیق Class::Method
     wanted = f"{target_class}::{target_method}" if target_class else target_method
     if wanted in extracted_keys:
         return wanted
 
-    # اولویت 2: هر کلیدی که به همین suffix ختم شود
     for k in extracted_keys:
         if k.endswith(f"{target_class}::{target_method}"):
             return k
 
-    # اولویت 3: تطابق فقط با نام متد
     for k in extracted_keys:
         if k.split("::")[-1] == target_method:
             return k
 
     return None
 
-# =========================
-# Main API
-# =========================
 
 def extract_critical_functions(
     project_path: str,
     prompt_file: str,
     output_file: str = "output/function_summaries.json",
 ) -> None:
-    """
-    - از critical_paths (هر دو جهت) توابع غیرتستی با file واقعی را جمع می‌کند.
-    - از hotspots[test].functions نیز جمع‌آوری می‌کند (برای پوشش locus).
-    - اگر هیچ‌چیز جمع نشد، از summary (Failed tests) حدس می‌زند.
-    - کد/خط/داک‌استرینگ را از فایل واقعی استخراج می‌کند و ذخیره می‌کند.
-    """
+
     project_root = Path(project_path)
 
     with open(prompt_file, "r", encoding="utf-8") as f:
@@ -457,7 +434,6 @@ def extract_critical_functions(
 
     used_functions: Set[Tuple[str, str]] = set()
 
-    # 1) از critical_paths
     crit = data.get("critical_paths") or {}
     for _test_name, paths in crit.items():
         for direction in ("upstream", "downstream"):
@@ -469,7 +445,6 @@ def extract_critical_functions(
                     if node_id and rel_file and not is_test:
                         used_functions.add((node_id, rel_file))
 
-    # 2) از hotspots
     hs = data.get("hotspots") or {}
     for _test_name, item in hs.items():
         for func_id in item.get("functions", []) or []:
@@ -477,7 +452,6 @@ def extract_critical_functions(
             if rel_file:
                 used_functions.add((func_id, rel_file))
 
-    # 3) اگر هنوز خالی است: حدس از failed tests
     if not used_functions:
         lang = (_infer_lang_from_path(project_path) or "").lower()
         summary = data.get("summary") or {}
@@ -487,7 +461,6 @@ def extract_critical_functions(
 
     result: Dict[str, Dict[str, str]] = {}
 
-    # 4) استخراج از فایل‌ها
     for func_id, rel_file in used_functions:
         rel_file_norm = str(rel_file).replace("\\", "/")
         abs_path = project_root.joinpath(rel_file_norm).resolve()
@@ -496,13 +469,19 @@ def extract_critical_functions(
             by_suffix = _find_by_relpath_suffix(str(project_root), rel_file_norm)
             if by_suffix:
                 abs_path = Path(by_suffix).resolve()
-                rel_file_norm = os.path.relpath(str(abs_path), str(project_root)).replace("\\", "/")
+                rel_file_norm = os.path.relpath(
+                    str(abs_path), str(project_root)
+                ).replace("\\", "/")
             else:
-                candidates = _find_candidate_files(str(project_root), os.path.basename(rel_file_norm))
+                candidates = _find_candidate_files(
+                    str(project_root), os.path.basename(rel_file_norm)
+                )
                 if not candidates:
                     continue
                 abs_path = Path(candidates[0]).resolve()
-                rel_file_norm = os.path.relpath(str(abs_path), str(project_root)).replace("\\", "/")
+                rel_file_norm = os.path.relpath(
+                    str(abs_path), str(project_root)
+                ).replace("\\", "/")
 
         extracted = extract_functions_from_file(str(abs_path))
         if not extracted:
@@ -510,7 +489,6 @@ def extract_critical_functions(
 
         match_key = _match_extracted_key(list(extracted.keys()), func_id)
         if not match_key:
-            # تلاش آخر: اگر func_id خودش "Class::Method" ساده بود
             if func_id in extracted:
                 match_key = func_id
 
@@ -527,4 +505,3 @@ def extract_critical_functions(
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
-

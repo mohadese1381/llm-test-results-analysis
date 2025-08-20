@@ -4,11 +4,6 @@ from typing import Any, Dict, List, Optional
 
 
 class PromptGenerator:
-    """
-    Assemble a best‐practice prompt for analyzing failed tests via a large language model.
-    بدون Chain-of-Thought؛ خروجی فقط JSON مطابق اسکیمای جدید.
-    """
-
     _SYSTEM = (
         "You are an expert software QA/SE assistant. Analyze failed tests across Python/Java/C# projects, "
         "using the provided test summary, critical call paths, hotspots, and function snippets. "
@@ -24,7 +19,6 @@ class PromptGenerator:
         "tech debt hotspots). Keep them high-signal, non-generic, and consistent with severity/failure_type/context."
     )
 
-    # ── NEW: schema includes `insight_bullets` per test ──────────────────────────
     _OUTPUT_SCHEMA = {
         "analysis": [
             {
@@ -146,10 +140,6 @@ class PromptGenerator:
         return "\n".join(out)
 
     def _render_few_shot(self) -> str:
-        """
-        اگر few-shot ها کلید reasoning داشته باشند، آن را به rationale نگاشت می‌کنیم
-        تا با اسکیمای نهایی سازگار شوند (و از CoT هم جلوگیری شود).
-        """
         lines = ["FEW-SHOT EXAMPLES (style only, no chain-of-thought):"]
         for ex in self._few_shot:
             ip = ex.get("input", "").strip()

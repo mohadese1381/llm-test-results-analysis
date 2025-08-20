@@ -13,10 +13,6 @@ EXT_TO_LANG: Dict[str, str] = {
 
 
 def infer_languages_from_project(project_root: str) -> List[str]:
-    """
-    با پیمایش پوشهٔ پروژه، زبان‌های موجود را کشف می‌کند.
-    خروجی: لیست یکتا از {"python","java","csharp"} بر اساس پسوند فایل‌ها.
-    """
     root = Path(project_root)
     langs: Dict[str, bool] = {"python": False, "java": False, "csharp": False}
 
@@ -34,11 +30,6 @@ def infer_languages_from_project(project_root: str) -> List[str]:
 def load_few_shots(
     fs_dir: str, langs: Iterable[str], per_lang_limit: int = 2
 ) -> List[Dict[str, str]]:
-    """
-    از پوشهٔ few_shots برای زبان‌های داده‌شده مثال‌ها را می‌خواند.
-    هر فایل باید آرایه‌ای از {input, output} باشد.
-    per_lang_limit: حداکثر مثال در هر زبان (برای جلوگیری از بزرگ‌شدن پرامپت).
-    """
     out: List[Dict[str, str]] = []
     base = Path(fs_dir)
 

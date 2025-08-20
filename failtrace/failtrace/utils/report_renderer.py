@@ -9,7 +9,7 @@ import hashlib
 import pickle
 
 import networkx as nx
-from ..graph.graph_utils.locator_ranker import rank_candidates_by_graph
+from ..graph.utils.locator_ranker import rank_candidates_by_graph
 
 
 class ReportBuildError(RuntimeError):
@@ -211,9 +211,6 @@ def _locations_from_locus(locus: dict, lines_map: Dict[str, int]) -> List[str]:
     return uniq
 
 
-# ---------- Graph cache helpers ----------
-
-
 def _load_cached_graph(out_dir: Path) -> nx.DiGraph | None:
     try:
         pkl = out_dir / "cache" / "graph.pkl"
@@ -247,13 +244,8 @@ def _normalize_chain(s: str) -> str:
     return s.strip()
 
 
-# ---------- Insights / Failures ----------
-
-
 def _clean_test_label(test_name: str) -> str:
-    """
-    فقط نام تابع تست (آخرین بخش بعد از ::) – مناسب برای ستون اول Insights.
-    """
+
     s = (test_name or "").strip()
     if not s:
         return ""
@@ -262,14 +254,11 @@ def _clean_test_label(test_name: str) -> str:
 
 
 def _default_bullets_for_item(it: dict, freq: Counter) -> List[str]:
-    """
-    اگر LLM بولت ندهد، بر اساس failure_type، severity و فراوانی نوع خطا بولت می‌سازیم.
-    """
+
     bullets: List[str] = []
     sev = (it.get("severity") or "medium").strip().lower()
     ft = _norm_failure_type(it.get("failure_type") or "")
     freq_ft = freq.get(ft or "Other", 0)
-    # بولت‌های کوتاه و کاربردی
     if ft in {"AssertionError", "DataMismatch"}:
         bullets.append(
             "ریسک عدم‌انطباق نیازمندی‌ها؛ نیاز به بازبینی قراردادهای تست/بیزینس."
@@ -286,14 +275,12 @@ def _default_bullets_for_item(it: dict, freq: Counter) -> List[str]:
         )
     else:
         bullets.append("ریسک پایداری؛ نیاز به سخت‌گیرانه‌تر شدن تست‌های رگرسیون.")
-    # بر اساس شدت
     if sev == "high":
         bullets.append("اثر مستقیم بر readiness انتشار؛ اولویت رفع بالا.")
     elif sev == "medium":
         bullets.append("اثر قابل‌توجه بر Lead Time؛ برنامه‌ریزی رفع در اسپرینت جاری.")
     else:
         bullets.append("اثر محدود؛ می‌توان به‌صورت فرصت بهبود پیگیری کرد.")
-    # بر اساس فراوانی همان نوع خطا
     if freq_ft >= 2:
         bullets.append(
             "الگوی تکرارشونده؛ احتمالاً نیاز به اقدام سیستمی/ری‌فکتور در ناحیه مرتبط."
@@ -304,31 +291,24 @@ def _default_bullets_for_item(it: dict, freq: Counter) -> List[str]:
 def _insights_and_risks_from_llm(
     llm: dict, failed_count: int
 ) -> Tuple[List[dict], List[dict]]:
-    """
-    NEW: Insights به‌ازای هر تست شکست‌خورده:
-      - title: فقط نام تمیز تست (بدون فولدر/کلاس)
-      - detail: لیست بولت‌ها (از LLM: insight_bullets)؛ در نبود، fallback هوشمند
-    """
+
     insights: List[dict] = []
     risks: List[dict] = []
 
     if isinstance(llm, dict) and llm.get("analysis"):
         items: List[dict] = llm["analysis"]
-        # فراوانی نوع خطا برای ساخت بولت‌های بهتر در fallback
         types = [_norm_failure_type((it.get("failure_type") or "")) for it in items]
         freq = Counter(types)
 
         for it in items:
             title = _clean_test_label(it.get("test_name") or "")
             bullets = it.get("insight_bullets") or []
-            # تمیزکاری: فقط استرینگ‌های غیرخالی
             bullets = [str(b).strip() for b in bullets if str(b).strip()]
             if not bullets:
                 bullets = _default_bullets_for_item(it, freq)
             insights.append({"title": title, "detail": bullets})
         return insights, risks
 
-    # بدون LLM: پیام کلی سابق
     if failed_count > 0:
         return (
             [
@@ -343,9 +323,6 @@ def _insights_and_risks_from_llm(
 
 
 def _failures_table(summary: dict, llm: dict, funcs: dict) -> List[dict]:
-    """
-    جدول شکست‌ها با لایه‌های Location (graph_ranked/heuristic/llm).
-    """
     rows: List[dict] = []
     lines_map = _line_lookup(funcs)
     cached_graph: nx.DiGraph | None = globals().get("_CACHED_GRAPH_FOR_FAIL_TABLE")
@@ -355,7 +332,6 @@ def _failures_table(summary: dict, llm: dict, funcs: dict) -> List[dict]:
             test_name = it.get("test_name") or ""
             locus = it.get("locus") or {}
 
-            # LLM layer
             llm_suspects = []
             sus = locus.get("suspects") or []
             if isinstance(sus, list):
@@ -368,14 +344,12 @@ def _failures_table(summary: dict, llm: dict, funcs: dict) -> List[dict]:
                 if x and x not in loc_llm:
                     loc_llm.append(x)
 
-            # Heuristic
             loc_h: List[str] = [
                 _normalize_chain(x) for x in (it.get("heuristic_locations") or []) if x
             ]
             if not loc_h:
                 loc_h = llm_locations_from_locus[:]
 
-            # Graph-ranked
             loc_g: List[str] = []
             if cached_graph is not None:
                 node_id = _match_graph_node(cached_graph, test_name)
@@ -411,7 +385,6 @@ def _failures_table(summary: dict, llm: dict, funcs: dict) -> List[dict]:
             )
         return rows
 
-    # fallback بدون LLM
     for f in summary.get("failed_detail", []) or []:
         rows.append(
             {

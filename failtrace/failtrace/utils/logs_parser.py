@@ -5,18 +5,11 @@ import re
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Type, Optional, Iterable, Tuple
 
-
-# ---------------------------
-# Helpers
-# ---------------------------
-
-# پاکسازی کدهای ANSI: هم ESC واقعی، هم شکل هشداری '#x1B[...]'
-_ANSI_RE = re.compile(r"\x1B\[[0-9;]*[A-Za-z]")  # \x1b[...m
-_ANSI_HASH_RE = re.compile(r"#x1B\[[0-9;]*[A-Za-z]")  # #x1B[...m
+_ANSI_RE = re.compile(r"\x1B\[[0-9;]*[A-Za-z]")
+_ANSI_HASH_RE = re.compile(r"#x1B\[[0-9;]*[A-Za-z]")
 
 
 def _strip_xml_namespaces(root: ET.Element) -> None:
-    """In-place: remove any '{ns}tag' namespace prefixes so we can use simple XPath."""
     for el in root.iter():
         if isinstance(el.tag, str) and el.tag.startswith("{"):
             el.tag = re.sub(r"^\{.*?\}", "", el.tag)
@@ -33,7 +26,6 @@ def _safe_parse_xml(path: str) -> Optional[ET.Element]:
 
 
 def _clean_text(s: str) -> str:
-    """Trim + strip ANSI (ESC and '#x1B' forms)."""
     s = (s or "").strip()
     s = _ANSI_RE.sub("", s)
     s = _ANSI_HASH_RE.sub("", s)
@@ -41,14 +33,12 @@ def _clean_text(s: str) -> str:
 
 
 def _text_of(el: Optional[ET.Element]) -> str:
-    """Safe inner text of an XML element (stripped & ANSI cleaned)."""
     if el is None:
         return ""
     return _clean_text(el.text or "")
 
 
 def _attr(el: Optional[ET.Element], name: str) -> str:
-    """Safe attribute get (stripped & ANSI cleaned)."""
     if el is None:
         return ""
     try:
@@ -65,16 +55,10 @@ def _normalize_record(name: str, status: str, message: str) -> Dict:
     }
 
 
-# ---------------------------
-# Base Parser
-# ---------------------------
-
-
 class TestLogParser:
-    """Base interface for test log parsers."""
 
     registry: List[Type["TestLogParser"]] = []
-    PRIORITY = 100  # smaller = more specific
+    PRIORITY = 100
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -89,9 +73,7 @@ class TestLogParser:
 
     @classmethod
     def _probe_count(cls, lang: str, log_path: str) -> Tuple[int, Optional[List[Dict]]]:
-        """
-        Try to parse and return (count, data?) for ranking. Never raise.
-        """
+
         try:
             if not cls.can_parse(lang, log_path):
                 return 0, None
@@ -103,10 +85,7 @@ class TestLogParser:
 
     @classmethod
     def get_parser(cls, lang: str, log_path: str) -> "TestLogParser":
-        """
-        Choose the parser that yields the largest number of testcases.
-        Ties are broken by lower PRIORITY (more specific parser).
-        """
+
         candidates = [p for p in cls.registry if p.can_parse(lang, log_path)]
         if not candidates:
             raise ValueError(f"No parser for lang={lang!r}, file={log_path!r}")
@@ -123,7 +102,6 @@ class TestLogParser:
                 best_count = cnt
                 best_prio = pr
 
-        # Safety: if all failed to parse, fall back to the most universal option if present
         if best_cls is None or best_count <= 0:
             for pc in candidates:
                 if pc.__name__ == "UniversalXMLParser":
@@ -136,13 +114,7 @@ class TestLogParser:
         return best_cls()
 
 
-# ---------------------------
-# JSON parsers (pytest & generic)
-# ---------------------------
-
-
 class PytestJSONParser(TestLogParser):
-    """Parses pytest --json-report output."""
 
     PRIORITY = 10
 
@@ -173,7 +145,6 @@ class PytestJSONParser(TestLogParser):
 
 
 class GenericJSONParser(TestLogParser):
-    """Fallback JSON parser for list[{'name','status','message'}]."""
 
     PRIORITY = 90
 
@@ -199,17 +170,7 @@ class GenericJSONParser(TestLogParser):
         return out
 
 
-# ---------------------------
-# XML parsers
-# ---------------------------
-
-
 class XUnitXMLParser(TestLogParser):
-    """
-    .NET xUnit logger:
-      <assemblies><assembly><collection><test ... result="Pass|Fail|Skip">...</test>...</collection>...
-    """
-
     PRIORITY = 5
 
     @classmethod
@@ -260,11 +221,6 @@ class XUnitXMLParser(TestLogParser):
 
 
 class NUnitV3XMLParser(TestLogParser):
-    """
-    NUnit v3:
-      <test-run> ... <test-suite> ... <test-case fullname="..." name="..." result="Passed|Failed|Skipped"> ...
-    """
-
     PRIORITY = 12
 
     @classmethod
@@ -311,11 +267,6 @@ class NUnitV3XMLParser(TestLogParser):
 
 
 class TRXXMLParser(TestLogParser):
-    """
-    MSTest/xUnit/NUnit via VSTest (.trx):
-      map UnitTestResult -> UnitTest to get FullyQualifiedName
-    """
-
     PRIORITY = 15
 
     @classmethod
@@ -364,7 +315,6 @@ class TRXXMLParser(TestLogParser):
 
 
 class JUnitXMLParser(TestLogParser):
-    """Parses JUnit‐style XML (JUnit/Surefire, pytest --junitxml, NUnit JUnit‐logger, …)"""
 
     @classmethod
     def can_parse(cls, lang: str, log_path: str) -> bool:
@@ -441,7 +391,6 @@ class UniversalXMLParser(TestLogParser):
         if root is None:
             return []
 
-        # Prefer specialized shapes first
         if root.find(".//testcase") is not None:
             return JUnitXMLParser().load(log_path)
         if root.find(".//test-case") is not None:
@@ -457,7 +406,6 @@ class UniversalXMLParser(TestLogParser):
 
         out: List[Dict] = []
 
-        # 1) Any *testcase/test-case* elements
         for el in root.iter():
             tag = (el.tag or "").lower()
             if tag.endswith("testcase") or tag.endswith("test-case"):
@@ -486,7 +434,6 @@ class UniversalXMLParser(TestLogParser):
         if out:
             return out
 
-        # 2) xunit-like <test result="...">
         for el in root.iter():
             if (el.tag or "").lower().endswith("test"):
                 result = _attr(el, "result").lower()
@@ -512,7 +459,6 @@ class UniversalXMLParser(TestLogParser):
         if out:
             return out
 
-        # 3) Totally generic: any element with 'name'/'fullname'
         for el in root.iter():
             name = _attr(el, "fullname") or _attr(el, "name")
             if not name:
@@ -530,13 +476,7 @@ class UniversalXMLParser(TestLogParser):
         return out
 
 
-# ---------------------------
-# Public convenience
-# ---------------------------
-
-
 def _iter_log_files(path: str) -> Iterable[str]:
-    """Yield one or many log files. If 'path' is a dir, collect common XML/TRX/JSON files recursively."""
     if os.path.isdir(path):
         patterns = ["**/*.xml", "**/*.trx", "**/*.json"]
         yielded = set()
@@ -550,18 +490,11 @@ def _iter_log_files(path: str) -> Iterable[str]:
 
 
 def load_test_logs(lang: str, log_path: str) -> List[Dict]:
-    """
-    Unified entrypoint:
-      - Detect appropriate parser based on language + file content
-      - Supports file OR directory; merges all results
-      - Returns list of {'name','status','message'}
-    """
     results: List[Dict] = []
     for file_path in _iter_log_files(log_path):
         try:
             parser = TestLogParser.get_parser(lang, file_path)
         except ValueError:
-            # Skip unknown files silently; continue with others
             continue
         try:
             parsed = parser.load(file_path)

@@ -7,7 +7,4 @@ from .csharp_graph import extract_csharp_graph
 @register("csharp")
 class CSharpGraphBuilder(GraphBuilder):
     def build_graph(self, project_path: Path) -> nx.DiGraph:
-        """
-        Build the C# code graph from AST JSON produced by Roslyn.
-        """
         return extract_csharp_graph(str(project_path))
