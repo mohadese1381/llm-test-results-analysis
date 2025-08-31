@@ -97,14 +97,16 @@ def _emit_report(args, out_dir: Path) -> None:
             out_dir=str(out_dir),
             template_path=str(template_path),
         )
-        report_dir = _get_report_output_dir()
-        final_report = report_dir / f"report_{int(time.time())}.html"
+        report_root = _get_report_output_dir()
+        run_dir = report_root / f"report_{int(time.time())}"
+        run_dir.mkdir(parents=True, exist_ok=True)
+        final_report = run_dir / "index.html"
         Path(final).replace(final_report)
         src_report = Path(ir_files("failtrace")).joinpath("report")
         for asset in src_report.glob("*.css"):
-            shutil.copy(asset, report_dir / asset.name)
+            shutil.copy(asset, run_dir / asset.name)
         for asset in src_report.glob("*.js"):
-            shutil.copy(asset, report_dir / asset.name)
+            shutil.copy(asset, run_dir / asset.name)
         logger.info(f"✔ Report generated: {final_report}")
         if getattr(args, "open_report", False):
             webbrowser.open(f"file://{final_report}")
