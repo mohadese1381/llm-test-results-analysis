@@ -1,6 +1,6 @@
 [project]
 name = "failtrace"
-version = "0.6.9"
+version = "0.6.10"
 description = "Leveraging Large Language Models for Automated Test Results Analysis"
 readme = "README.md"
 license = { text = "MIT" }
@@ -47,7 +47,7 @@ include = [
 ]
 
 exclude = [
-  "lib/**",
+  "failtrace/failtrace/lib/**",
   "tests/**",
   "dist/**",
   "build/**",

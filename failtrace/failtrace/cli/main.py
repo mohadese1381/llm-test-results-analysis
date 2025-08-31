@@ -100,13 +100,6 @@ def _emit_report(args, out_dir: Path) -> None:
         report_dir = _get_report_output_dir()
         final_report = report_dir / f"report_{int(time.time())}.html"
         Path(final).replace(final_report)
-        pkg_root = Path(__file__).resolve().parents[1]
-        src_lib = pkg_root / "lib"
-        dst_lib = report_dir / "lib"
-        if dst_lib.exists():
-            shutil.rmtree(dst_lib)
-        if src_lib.exists():
-            shutil.copytree(src_lib, dst_lib)
         src_report = Path(ir_files("failtrace")).joinpath("report")
         for asset in src_report.glob("*.css"):
             shutil.copy(asset, report_dir / asset.name)
