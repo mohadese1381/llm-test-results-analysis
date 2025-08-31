@@ -245,7 +245,6 @@ def _normalize_chain(s: str) -> str:
 
 
 def _clean_test_label(test_name: str) -> str:
-
     s = (test_name or "").strip()
     if not s:
         return ""
@@ -254,36 +253,35 @@ def _clean_test_label(test_name: str) -> str:
 
 
 def _default_bullets_for_item(it: dict, freq: Counter) -> List[str]:
-
     bullets: List[str] = []
     sev = (it.get("severity") or "medium").strip().lower()
     ft = _norm_failure_type(it.get("failure_type") or "")
     freq_ft = freq.get(ft or "Other", 0)
     if ft in {"AssertionError", "DataMismatch"}:
         bullets.append(
-            "ریسک عدم‌انطباق نیازمندی‌ها؛ نیاز به بازبینی قراردادهای تست/بیزینس."
+            "Risk of requirement mismatch; review test/business contracts."
         )
     elif ft in {"AttributeError", "NullPointerException", "Configuration"}:
         bullets.append(
-            "ریسک ناپایداری در مرزهای ماژول؛ نیاز به Fail-fast و ولیدیشن ورودی."
+            "Risk of instability at module boundaries; adopt fail-fast and input validation."
         )
     elif ft in {"Timeout", "Network"}:
-        bullets.append("ریسک عملکرد/اتصال؛ نیاز به ایزوله‌سازی تست و بودجه‌ زمان.")
+        bullets.append("Performance/connection risk; isolate tests and allocate time budget.")
     elif ft in {"Mocking"}:
         bullets.append(
-            "ریسک پوشش ناکافی تست‌های دابل؛ استانداردسازی الگوهای mock لازم است."
+            "Insufficient test-double coverage; standardize mocking patterns."
         )
     else:
-        bullets.append("ریسک پایداری؛ نیاز به سخت‌گیرانه‌تر شدن تست‌های رگرسیون.")
+        bullets.append("Stability risk; tighten regression tests.")
     if sev == "high":
-        bullets.append("اثر مستقیم بر readiness انتشار؛ اولویت رفع بالا.")
+        bullets.append("Direct impact on release readiness; high fix priority.")
     elif sev == "medium":
-        bullets.append("اثر قابل‌توجه بر Lead Time؛ برنامه‌ریزی رفع در اسپرینت جاری.")
+        bullets.append("Notable impact on lead time; plan remediation in the current sprint.")
     else:
-        bullets.append("اثر محدود؛ می‌توان به‌صورت فرصت بهبود پیگیری کرد.")
+        bullets.append("Limited impact; track as an improvement opportunity.")
     if freq_ft >= 2:
         bullets.append(
-            "الگوی تکرارشونده؛ احتمالاً نیاز به اقدام سیستمی/ری‌فکتور در ناحیه مرتبط."
+            "Recurring pattern; likely requires systemic action/refactor in the affected area."
         )
     return bullets
 
@@ -291,7 +289,6 @@ def _default_bullets_for_item(it: dict, freq: Counter) -> List[str]:
 def _insights_and_risks_from_llm(
     llm: dict, failed_count: int
 ) -> Tuple[List[dict], List[dict]]:
-
     insights: List[dict] = []
     risks: List[dict] = []
 

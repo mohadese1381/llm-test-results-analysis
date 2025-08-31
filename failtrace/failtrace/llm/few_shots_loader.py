@@ -34,7 +34,7 @@ def load_few_shots(
     base = Path(fs_dir)
 
     for lang in langs:
-        files = sorted(base.glob(f"{lang}_*.json"))
+        files = sorted(base.glob(f"{lang}.json"))
         count = 0
         for f in files:
             try:
