@@ -27,10 +27,18 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 
-def _get_internal_output_dir() -> Path:
-    out_dir = Path(user_data_dir("failtrace", "failtrace"))
-    out_dir.mkdir(parents=True, exist_ok=True)
-    return out_dir
+def _is_dev_env() -> bool:
+    p = Path(__file__).resolve()
+    return (p.parents[2] / "pyproject.toml").is_file()
+
+
+def _get_output_dir() -> Path:
+    if _is_dev_env():
+        out = Path(__file__).resolve().parents[1] / "output"
+    else:
+        out = Path(user_data_dir("failtrace", "failtrace")) / "output"
+    out.mkdir(parents=True, exist_ok=True)
+    return out
 
 
 def _graph_cache_path(output_dir: str | Path) -> Path:
@@ -91,17 +99,18 @@ def _emit_report(args, out_dir: Path) -> None:
             out_dir=str(out_dir),
             template_path=str(template_path),
         )
-        project_dir = Path(args.project).resolve()
-        reports_root = project_dir / "report"
+        reports_root = Path.cwd() / "report"
         run_dir = reports_root / f"report_{int(time.time())}"
         run_dir.mkdir(parents=True, exist_ok=True)
         final_report = run_dir / "index.html"
         Path(final).replace(final_report)
+
         src_report = Path(ir_files("failtrace")).joinpath("report")
         for asset in src_report.glob("*.css"):
             shutil.copy(asset, run_dir / asset.name)
         for asset in src_report.glob("*.js"):
             shutil.copy(asset, run_dir / asset.name)
+
         logger.info(f"✔ Report generated: {final_report}")
         if getattr(args, "open_report", False):
             webbrowser.open(f"file://{final_report}")
@@ -123,7 +132,7 @@ def _timed_step(step_num, total_steps, description, func, *args, **kwargs):
 
 
 def run_full(args) -> None:
-    out_dir = _get_internal_output_dir()
+    out_dir = _get_output_dir()
     total_steps = 8
     lang = _timed_step(
         1, total_steps, "Detecting language", detect_language, args.project
@@ -186,7 +195,7 @@ def run_full(args) -> None:
 
 
 def run_quick(args) -> None:
-    out_dir = _get_internal_output_dir()
+    out_dir = _get_output_dir()
     total_steps = 7
     lang = _timed_step(
         1, total_steps, "Detecting language", detect_language, args.project
