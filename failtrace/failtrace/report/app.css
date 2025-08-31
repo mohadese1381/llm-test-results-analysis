@@ -1,0 +1,251 @@
+:root {
+  --bg: #0c1117;
+  --card: #111827;
+  --muted: #99a9bf;
+  --text: #e6eef6;
+  --accent: #3b82f6;
+  --ok: #19a974;
+  --warn: #f59e0b;
+  --err: #ef4444;
+  --sep: #1f2a37;
+  --chip-bg: #0f172a;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
+    "Helvetica Neue", "Noto Sans", sans-serif;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.title-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0;
+}
+.meta-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.meta-item {
+  white-space: nowrap;
+}
+.dot {
+  opacity: 0.6;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--sep);
+  border-radius: 16px;
+  padding: 16px;
+  min-height: 260px;
+}
+.card-flex {
+  display: flex;
+  flex-direction: column;
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.section-title h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.section-hint {
+  margin: 4px 0 12px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.card--kpis {
+  min-height: auto;
+  padding: 12px;
+}
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.kpi {
+  background: #0d1522;
+  border: 1px solid var(--sep);
+  border-radius: 14px;
+  padding: 12px;
+}
+.kpi h4 {
+  margin: 0 0 6px 0;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+.kpi .v {
+  font-size: 20px;
+  font-weight: 800;
+}
+.kpi.ok .v {
+  color: var(--ok);
+}
+.kpi.err .v {
+  color: var(--err);
+}
+.kpi.warn .v {
+  color: var(--warn);
+}
+
+.chart-area {
+  margin-top: auto;
+  height: 260px;
+}
+.chart-area canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+.chart-area.stick-bottom {
+  margin-top: auto;
+}
+
+.card--risk .chart-area {
+  height: 300px;
+  margin-top: 15px;
+}
+
+.table-wrap--fail-scroll {
+  max-height: calc(4 * 85 + 42px); 
+  overflow: auto;
+}
+.table-wrap--fail-auto {
+  max-height: none;
+  overflow: visible;
+}
+
+.grid--equal .card {
+  min-height: 420px;
+}
+.table-wrap--scroll {
+  max-height: 320px;
+  overflow: auto;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  min-width: 100%;
+}
+.table th {
+  color: #c9d4e5;
+  background: #0d1522;
+  font-weight: 700;
+  text-align: left;
+  font-size: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--sep);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+.table td {
+  background: #0f1624;
+  border: 1px solid var(--sep);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  vertical-align: top;
+  color: #e7eef8;
+}
+.table tbody tr:hover td {
+  background: #0f1a2b;
+  border-color: #22344a;
+}
+
+.fix-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fix-badge {
+  display: inline-block;
+  background: #0b1220;
+  border: 1px dashed var(--sep);
+  color: var(--muted);
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+@media (max-width: 960px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .grid--equal .card {
+    min-height: 360px;
+  }
+}
+
+@media print {
+  .actions {
+    display: none;
+  }
+}
