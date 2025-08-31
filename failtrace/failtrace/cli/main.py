@@ -8,7 +8,7 @@ import webbrowser
 import shutil
 
 import networkx as nx
-from platformdirs import user_data_dir, user_documents_dir
+from platformdirs import user_data_dir
 from importlib.resources import files as ir_files
 
 from ..graph.builder import build_graph, detect_language
@@ -31,12 +31,6 @@ def _get_internal_output_dir() -> Path:
     out_dir = Path(user_data_dir("failtrace", "failtrace"))
     out_dir.mkdir(parents=True, exist_ok=True)
     return out_dir
-
-
-def _get_report_output_dir() -> Path:
-    reports_dir = Path(user_documents_dir()) / "FailTraceReports"
-    reports_dir.mkdir(parents=True, exist_ok=True)
-    return reports_dir
 
 
 def _graph_cache_path(output_dir: str | Path) -> Path:
@@ -97,8 +91,9 @@ def _emit_report(args, out_dir: Path) -> None:
             out_dir=str(out_dir),
             template_path=str(template_path),
         )
-        report_root = _get_report_output_dir()
-        run_dir = report_root / f"report_{int(time.time())}"
+        project_dir = Path(args.project).resolve()
+        reports_root = project_dir / "report"
+        run_dir = reports_root / f"report_{int(time.time())}"
         run_dir.mkdir(parents=True, exist_ok=True)
         final_report = run_dir / "index.html"
         Path(final).replace(final_report)
