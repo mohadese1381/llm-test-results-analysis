@@ -9,6 +9,7 @@ import shutil
 
 import networkx as nx
 from platformdirs import user_data_dir, user_documents_dir
+from importlib.resources import files as ir_files
 
 from ..graph.builder import build_graph, detect_language
 from ..utils.visualizer import visualize_graph
@@ -90,34 +91,27 @@ def _assemble_and_maybe_call_api(
 
 def _emit_report(args, out_dir: Path) -> None:
     try:
-        template_path = (
-            Path(__file__).resolve().parents[1] / "report" / "report_template.html"
-        )
+        template_path = ir_files("failtrace").joinpath("report", "report_template.html")
         final = render_report_html(
             project_path=args.project,
             out_dir=str(out_dir),
             template_path=str(template_path),
         )
-
         report_dir = _get_report_output_dir()
         final_report = report_dir / f"report_{int(time.time())}.html"
         Path(final).replace(final_report)
-
         pkg_root = Path(__file__).resolve().parents[1]
-
         src_lib = pkg_root / "lib"
         dst_lib = report_dir / "lib"
         if dst_lib.exists():
             shutil.rmtree(dst_lib)
         if src_lib.exists():
             shutil.copytree(src_lib, dst_lib)
-
-        src_report = pkg_root / "report"
+        src_report = Path(ir_files("failtrace")).joinpath("report")
         for asset in src_report.glob("*.css"):
             shutil.copy(asset, report_dir / asset.name)
         for asset in src_report.glob("*.js"):
             shutil.copy(asset, report_dir / asset.name)
-
         logger.info(f"✔ Report generated: {final_report}")
         if getattr(args, "open_report", False):
             webbrowser.open(f"file://{final_report}")
