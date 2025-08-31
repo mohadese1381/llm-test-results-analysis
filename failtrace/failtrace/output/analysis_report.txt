@@ -1,0 +1,113 @@
+{
+ "analysis": [
+ {
+ "test_name": "tests/smoke/test_basic.py::test_will_fail",
+ "error": "AssertionError: Function should return double of the value",
+ "call_path": [
+ "tests/smoke/test_basic.py::test_will_fail",
+ "source/sut.py::SystemUnderTest::function"
+ ],
+ "locus": {
+ "files": [
+ "source/sut.py"
+ ],
+ "functions": [
+ "source/sut.py::SystemUnderTest::function"
+ ]
+ },
+ "failure_type": "AssertionError",
+ "root_cause": "SystemUnderTest::function does not correctly compute double of the input value.",
+ "severity": "high",
+ "suggested_fixes": [
+ "Verify and correct the logic in SystemUnderTest::function to ensure it doubles the input value.",
+ "Add unit tests to validate edge cases for numeric inputs."
+ ],
+ "rationale": [
+ "Assertion failed due to incorrect output (expected 4, got 2).",
+ "Critical path confirms the issue originates in SystemUnderTest::function.",
+ "Function documentation suggests it should double the input, but behavior deviates."
+ ],
+ "insight_bullets": [
+ "Logic errors in foundational functions can cascade into other tests.",
+ "High risk to release stability if core functionality is unreliable.",
+ "Increased lead time due to debugging and patching critical logic."
+ ]
+ },
+ {
+ "test_name": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
+ "error": "AssertionError: Failed Expectations : 1",
+ "call_path": [
+ "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
+ "expect",
+ "assert_expectations"
+ ],
+ "failure_type": "AssertionError",
+ "root_cause": "Mocked response JSON does not match the expected empty dictionary, causing failed expectation.",
+ "severity": "medium",
+ "suggested_fixes": [
+ "Update the mock setup to return an empty dictionary if that is the intended test behavior.",
+ "Ensure test expectations align with the actual mock response setup."
+ ],
+ "rationale": [
+ "Mocked response returns {'key': 'value'} instead of {}.",
+ "Failed expectation directly tied to mismatched mock setup.",
+ "Critical path highlights reliance on expect/assert_expectations for validation."
+ ],
+ "insight_bullets": [
+ "Misaligned mocks can lead to brittle tests and false negatives.",
+ "Potential delays in debugging due to unclear expectation mismatches.",
+ "Risk of accumulating tech debt if mock setups are inconsistent."
+ ]
+ },
+ {
+ "test_name": "tests/unit/test_mocks.py::test_mock_patching",
+ "error": "AttributeError: 'called_once' is not a valid assertion",
+ "call_path": [
+ "tests/unit/test_mocks.py::test_mock_patching",
+ "called_once"
+ ],
+ "failure_type": "AttributeError",
+ "root_cause": "Mock object lacks 'called_once' attribute; improper usage without specifying a mock spec.",
+ "severity": "medium",
+ "suggested_fixes": [
+ "Use mocker.patch with a spec to ensure valid attributes like 'called_once'.",
+ "Replace 'called_once' with a valid assertion method such as 'mocked.call_count == 1'."
+ ],
+ "rationale": [
+ "AttributeError indicates 'called_once' is not part of the mock object.",
+ "Critical path confirms improper mock usage without a spec.",
+ "Mock documentation explicitly advises using specs for attribute validation."
+ ],
+ "insight_bullets": [
+ "Improper mock usage can lead to unreliable tests and debugging overhead.",
+ "Increased risk of test failures across similar mocking scenarios.",
+ "Potential tech debt if mock assertions are not standardized."
+ ]
+ },
+ {
+ "test_name": "tests/unit/test_mocks.py::test_mock_side_effect",
+ "error": "AttributeError: 'called_once' is not a valid assertion",
+ "call_path": [
+ "tests/unit/test_mocks.py::test_mock_side_effect",
+ "called_once"
+ ],
+ "failure_type": "AttributeError",
+ "root_cause": "Mock object lacks 'called_once' attribute; improper usage without specifying a mock spec.",
+ "severity": "medium",
+ "suggested_fixes": [
+ "Use mocker.patch with a spec to ensure valid attributes like 'called_once'.",
+ "Replace 'called_once' with a valid assertion method such as 'mocked.call_count == 1'."
+ ],
+ "rationale": [
+ "AttributeError indicates 'called_once' is not part of the mock object.",
+ "Critical path confirms improper mock usage without a spec.",
+ "Mock documentation explicitly advises using specs for attribute validation."
+ ],
+ "insight_bullets": [
+ "Improper mock usage can lead to unreliable tests and debugging overhead.",
+ "Increased risk of test failures across similar mocking scenarios.",
+ "Potential tech debt if mock assertions are not standardized."
+ ]
+ }
+ ]
+}

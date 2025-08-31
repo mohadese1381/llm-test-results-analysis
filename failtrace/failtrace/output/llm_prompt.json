@@ -1,0 +1,247 @@
+{
+  "meta": {
+    "project_path": "C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples",
+    "log_path": "C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\test-results\\TEST-pytest-samples.xml",
+    "language": "python",
+    "graph": {
+      "nodes": 52,
+      "edges": 32
+    }
+  },
+  "summary": {
+    "total_tests": 29,
+    "executed_tests": 24,
+    "passed_tests": 19,
+    "failed_tests": 4,
+    "skipped_tests": 1,
+    "untagged_tests": 5,
+    "failed_detail": [
+      {
+        "name": "tests/smoke/test_basic.py::test_will_fail",
+        "file": "tests/smoke/test_basic.py",
+        "line": null,
+        "error": "AssertionError: Function should return double of the value\nassert 2 == 4\ndef test_will_fail():\n        result = SystemUnderTest().function(1)\n>       assert result == 4, \"Function should return double of the value\"\nE       AssertionError: Function should return double of the value\nE       assert 2 == 4\n\ntests\\smoke\\test_basic.py:29: AssertionError",
+        "doc": ""
+      },
+      {
+        "name": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
+        "file": "tests/unit/test_delayed_assert.py",
+        "line": null,
+        "error": "AssertionError: \n\nassert_expectations() called at\n\"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:13\" in test_delayed_response_with_error()\n\nFailed Expectations : 1\n\n1: Failed at \"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:12\", in test_delayed_response_with_error()\n\tErrorMessage:\t{\"key\": \"value\"}\n    expect(response.json() == {}, response.text)\nrequests_mock = <requests_mock.mocker.Mocker object at 0x0000020CF2C0F980>\n\n    def test_delayed_response_with_error(requests_mock):\n        url = \"http://tests.com\"\n        requests_mock.get(url, json={\"key\": \"value\"})\n    \n        response = requests.get(url)\n    \n        expect(response.status_code == 200, response.status_code)\n        expect(response.json() == {}, response.text)\n>       assert_expectations()\n\ntests\\unit\\test_delayed_assert.py:13: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def assert_expectations():\n        'raise an assert if there are any failed expectations'\n        if _failed_expectations:\n>           assert False, _report_failures()\nE           AssertionError: \nE           \nE           assert_expectations() called at\nE           \"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:13\" in test_delayed_response_with_error()\nE           \nE           Failed Expectations : 1\nE           \nE           1: Failed at \"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:12\", in test_delayed_response_with_error()\nE           \tErrorMessage:\t{\"key\": \"value\"}\nE               expect(response.json() == {}, response.text)\n\n.venv\\Lib\\site-packages\\delayed_assert\\delayed_assert.py:74: AssertionError",
+        "doc": ""
+      },
+      {
+        "name": "tests/unit/test_mocks.py::test_mock_patching",
+        "file": "tests/unit/test_mocks.py",
+        "line": null,
+        "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.\nmocker = <pytest_mock.plugin.MockerFixture object at 0x0000020CF2C75A00>\n\n    def test_mock_patching(mocker):\n        url = \"https://2021.es.pycon.org/\"\n        mocked = mocker.patch.object(requests, \"get\", return_value=\"intercepted\")\n    \n        response = requests.get(url)\n        assert response == \"intercepted\"\n>       assert mocked.called_once()\n               ^^^^^^^^^^^^^^^^^^\n\ntests\\unit\\test_mocks.py:24: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <MagicMock name='get' id='2254636015280'>, name = 'called_once'\n\n    def __getattr__(self, name):\n        if name in {'_mock_methods', '_mock_unsafe'}:\n            raise AttributeError(name)\n        elif self._mock_methods is not None:\n            if name not in self._mock_methods or name in _all_magics:\n                raise AttributeError(\"Mock object has no attribute %r\" % name)\n        elif _is_magic(name):\n            raise AttributeError(name)\n        if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):\n            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:\n>               raise AttributeError(\n                    f\"{name!r} is not a valid assertion. Use a spec \"\n                    f\"for the mock if {name!r} is meant to be an attribute.\")\nE               AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.\n\n..\\..\\..\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\mock.py:663: AttributeError",
+        "doc": ""
+      },
+      {
+        "name": "tests/unit/test_mocks.py::test_mock_side_effect",
+        "file": "tests/unit/test_mocks.py",
+        "line": null,
+        "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.\nmocker = <pytest_mock.plugin.MockerFixture object at 0x0000020CF10D5400>\n\n    def test_mock_side_effect(mocker):\n        mocked = mocker.patch.object(requests, \"get\", side_effect=KeyError(\"coconut\"))\n    \n        with pytest.raises(KeyError) as exc_info:\n            requests.get(\"does not matter\")\n        assert exc_info.value.args[0] == \"coconut\"\n        assert exc_info.typename == \"KeyError\"\n>       assert mocked.called_once()\n               ^^^^^^^^^^^^^^^^^^\n\ntests\\unit\\test_mocks.py:34: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <MagicMock name='get' id='2254636502384'>, name = 'called_once'\n\n    def __getattr__(self, name):\n        if name in {'_mock_methods', '_mock_unsafe'}:\n            raise AttributeError(name)\n        elif self._mock_methods is not None:\n            if name not in self._mock_methods or name in _all_magics:\n                raise AttributeError(\"Mock object has no attribute %r\" % name)\n        elif _is_magic(name):\n            raise AttributeError(name)\n        if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):\n            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:\n>               raise AttributeError(\n                    f\"{name!r} is not a valid assertion. Use a spec \"\n                    f\"for the mock if {name!r} is meant to be an attribute.\")\nE               AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.\n\n..\\..\\..\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\mock.py:663: AttributeError",
+        "doc": ""
+      }
+    ]
+  },
+  "critical_paths": {
+    "tests/smoke/test_basic.py::test_will_fail": {
+      "error": "AssertionError: Function should return double of the value\nassert 2 == 4\ndef test_will_fail():\n        result = SystemUnderTest().function(1)\n>       assert result == 4, \"Function should return double of the value\"\nE       AssertionError: Function should return double of the value\nE       assert 2 == 4\n\ntests\\smoke\\test_basic.py:29: AssertionError",
+      "upstream": [],
+      "downstream": [
+        [
+          {
+            "node": "tests/smoke/test_basic.py::test_will_fail",
+            "type": "test",
+            "file": "tests/smoke/test_basic.py",
+            "line": 27,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "source/sut.py::SystemUnderTest::function",
+            "type": "function",
+            "file": "source/sut.py",
+            "line": 11,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": ""
+          }
+        ],
+        [
+          {
+            "node": "tests/smoke/test_basic.py::test_will_fail",
+            "type": "test",
+            "file": "tests/smoke/test_basic.py",
+            "line": 27,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "SystemUnderTest",
+            "type": "external",
+            "file": null,
+            "line": null,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": "",
+            "external_key": "SystemUnderTest",
+            "origin": {
+              "callers": [
+                "tests/smoke/test_basic.py"
+              ]
+            }
+          }
+        ]
+      ]
+    },
+    "tests/unit/test_delayed_assert.py::test_delayed_response_with_error": {
+      "error": "AssertionError: \n\nassert_expectations() called at\n\"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:13\" in test_delayed_response_with_error()\n\nFailed Expectations : 1\n\n1: Failed at \"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:12\", in test_delayed_response_with_error()\n\tErrorMessage:\t{\"key\": \"value\"}\n    expect(response.json() == {}, response.text)\nrequests_mock = <requests_mock.mocker.Mocker object at 0x0000020CF2C0F980>\n\n    def test_delayed_response_with_error(requests_mock):\n        url = \"http://tests.com\"\n        requests_mock.get(url, json={\"key\": \"value\"})\n    \n        response = requests.get(url)\n    \n        expect(response.status_code == 200, response.status_code)\n        expect(response.json() == {}, response.text)\n>       assert_expectations()\n\ntests\\unit\\test_delayed_assert.py:13: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\n    def assert_expectations():\n        'raise an assert if there are any failed expectations'\n        if _failed_expectations:\n>           assert False, _report_failures()\nE           AssertionError: \nE           \nE           assert_expectations() called at\nE           \"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:13\" in test_delayed_response_with_error()\nE           \nE           Failed Expectations : 1\nE           \nE           1: Failed at \"C:\\Users\\Mohadese\\Desktop\\test-python-pytest\\pytest-samples\\tests\\unit\\test_delayed_assert.py:12\", in test_delayed_response_with_error()\nE           \tErrorMessage:\t{\"key\": \"value\"}\nE               expect(response.json() == {}, response.text)\n\n.venv\\Lib\\site-packages\\delayed_assert\\delayed_assert.py:74: AssertionError",
+      "upstream": [],
+      "downstream": [
+        [
+          {
+            "node": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
+            "type": "test",
+            "file": "tests/unit/test_delayed_assert.py",
+            "line": 5,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "expect",
+            "type": "external",
+            "file": null,
+            "line": null,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": "",
+            "external_key": "expect",
+            "origin": {
+              "callers": [
+                "tests/unit/test_delayed_assert.py"
+              ]
+            }
+          }
+        ],
+        [
+          {
+            "node": "tests/unit/test_delayed_assert.py::test_delayed_response_with_error",
+            "type": "test",
+            "file": "tests/unit/test_delayed_assert.py",
+            "line": 5,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "assert_expectations",
+            "type": "external",
+            "file": null,
+            "line": null,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": "",
+            "external_key": "assert_expectations",
+            "origin": {
+              "callers": [
+                "tests/unit/test_delayed_assert.py"
+              ]
+            }
+          }
+        ]
+      ]
+    },
+    "tests/unit/test_mocks.py::test_mock_patching": {
+      "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.\nmocker = <pytest_mock.plugin.MockerFixture object at 0x0000020CF2C75A00>\n\n    def test_mock_patching(mocker):\n        url = \"https://2021.es.pycon.org/\"\n        mocked = mocker.patch.object(requests, \"get\", return_value=\"intercepted\")\n    \n        response = requests.get(url)\n        assert response == \"intercepted\"\n>       assert mocked.called_once()\n               ^^^^^^^^^^^^^^^^^^\n\ntests\\unit\\test_mocks.py:24: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <MagicMock name='get' id='2254636015280'>, name = 'called_once'\n\n    def __getattr__(self, name):\n        if name in {'_mock_methods', '_mock_unsafe'}:\n            raise AttributeError(name)\n        elif self._mock_methods is not None:\n            if name not in self._mock_methods or name in _all_magics:\n                raise AttributeError(\"Mock object has no attribute %r\" % name)\n        elif _is_magic(name):\n            raise AttributeError(name)\n        if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):\n            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:\n>               raise AttributeError(\n                    f\"{name!r} is not a valid assertion. Use a spec \"\n                    f\"for the mock if {name!r} is meant to be an attribute.\")\nE               AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.\n\n..\\..\\..\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\mock.py:663: AttributeError",
+      "upstream": [],
+      "downstream": [
+        [
+          {
+            "node": "tests/unit/test_mocks.py::test_mock_patching",
+            "type": "test",
+            "file": "tests/unit/test_mocks.py",
+            "line": 18,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "called_once",
+            "type": "external",
+            "file": null,
+            "line": null,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": "",
+            "external_key": "called_once",
+            "origin": {
+              "callers": [
+                "tests/unit/test_mocks.py"
+              ]
+            }
+          }
+        ]
+      ]
+    },
+    "tests/unit/test_mocks.py::test_mock_side_effect": {
+      "error": "AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.\nmocker = <pytest_mock.plugin.MockerFixture object at 0x0000020CF10D5400>\n\n    def test_mock_side_effect(mocker):\n        mocked = mocker.patch.object(requests, \"get\", side_effect=KeyError(\"coconut\"))\n    \n        with pytest.raises(KeyError) as exc_info:\n            requests.get(\"does not matter\")\n        assert exc_info.value.args[0] == \"coconut\"\n        assert exc_info.typename == \"KeyError\"\n>       assert mocked.called_once()\n               ^^^^^^^^^^^^^^^^^^\n\ntests\\unit\\test_mocks.py:34: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = <MagicMock name='get' id='2254636502384'>, name = 'called_once'\n\n    def __getattr__(self, name):\n        if name in {'_mock_methods', '_mock_unsafe'}:\n            raise AttributeError(name)\n        elif self._mock_methods is not None:\n            if name not in self._mock_methods or name in _all_magics:\n                raise AttributeError(\"Mock object has no attribute %r\" % name)\n        elif _is_magic(name):\n            raise AttributeError(name)\n        if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):\n            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:\n>               raise AttributeError(\n                    f\"{name!r} is not a valid assertion. Use a spec \"\n                    f\"for the mock if {name!r} is meant to be an attribute.\")\nE               AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.\n\n..\\..\\..\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\unittest\\mock.py:663: AttributeError",
+      "upstream": [],
+      "downstream": [
+        [
+          {
+            "node": "tests/unit/test_mocks.py::test_mock_side_effect",
+            "type": "test",
+            "file": "tests/unit/test_mocks.py",
+            "line": 27,
+            "is_test": true,
+            "status": "failed",
+            "docstring": ""
+          },
+          {
+            "node": "called_once",
+            "type": "external",
+            "file": null,
+            "line": null,
+            "is_test": false,
+            "status": "not_executed",
+            "docstring": "",
+            "external_key": "called_once",
+            "origin": {
+              "callers": [
+                "tests/unit/test_mocks.py"
+              ]
+            }
+          }
+        ]
+      ]
+    }
+  },
+  "hotspots": {
+    "tests/smoke/test_basic.py::test_will_fail": {
+      "functions": [
+        "source/sut.py::SystemUnderTest::function"
+      ],
+      "files": [
+        "source/sut.py"
+      ]
+    },
+    "tests/unit/test_delayed_assert.py::test_delayed_response_with_error": {
+      "functions": [],
+      "files": []
+    },
+    "tests/unit/test_mocks.py::test_mock_patching": {
+      "functions": [],
+      "files": []
+    },
+    "tests/unit/test_mocks.py::test_mock_side_effect": {
+      "functions": [],
+      "files": []
+    }
+  }
+}

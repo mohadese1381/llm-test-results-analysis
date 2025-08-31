@@ -1,0 +1,8 @@
+{
+  "source/sut.py::SystemUnderTest::function": {
+    "file": "source/sut.py",
+    "line": 11,
+    "docstring": "Function that returns the double of a numeric\n\nReturns:\n    int or float depending on the input, None if None\n\nRaises:\n    TypeError if unexpected type",
+    "code": "def function(value: Numeric|None) -> Numeric|None:\n        \"\"\"Function that returns the double of a numeric\n\n        Returns:\n            int or float depending on the input, None if None\n\n        Raises:\n            TypeError if unexpected type\n\n        \"\"\"\n        if value is None:\n            return None\n        if not isinstance(value, (int, float)):\n            raise TypeError(\"Expected numeric\")\n        return 2 * value"
+  }
+}

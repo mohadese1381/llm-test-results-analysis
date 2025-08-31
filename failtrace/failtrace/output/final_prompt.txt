@@ -1,0 +1,399 @@
+You are an expert software QA/SE assistant. Analyze failed tests across Python/Java/C# projects, using the provided test summary, critical call paths, hotspots, and function snippets. Do rigorous internal reasoning but DO NOT reveal chain-of-thought. Output only the final JSON that follows the required schema. Explain root causes in detail, suggest fixes, and provide evidence-based rationale. For each failed test, you MUST provide a concise `failure_type`. Prefer the simple exception name without package/namespace (e.g., AssertionError, AttributeError, NullPointerException). If no clear exception, choose a short category like: Timeout, Network, Configuration, Mocking, DataMismatch, Resource, Flaky, Other. Additionally, for each failed test, provide concise `insight_bullets` (2–4 short bullets) that describe the aggregated/organizational impact if similar failures persist (e.g., stability, lead time, risk to release, tech debt hotspots). Keep them high-signal, non-generic, and consistent with severity/failure_type/context.
+Your tasks:
+1) Identify which tests failed and what the exact error messages are.
+2) Map failures to project areas using the provided critical paths and hotspots.
+3) Produce a precise multi-sentence explanation for root-cause analysis per failed test.
+4) Propose concrete fixes (code-level and/or config/integration).
+5) If signals suggest flaky/environmental issues, state it explicitly.
+6) Set `failure_type` to a SHORT normalized label (exception simple name or category). Examples: AssertionError, AttributeError, NullPointerException, Timeout, Network, Configuration, Mocking, DataMismatch, Other.
+7) Provide `insight_bullets` (2–4 short bullets) per test about project-level impact and why it matters.
+Do not include chain-of-thought or step-by-step reasoning in the output; only final JSON.
+
+TEST SUMMARY:
+- Total: 29 | Passed: 19 | Failed: 4 | Skipped: 1
+- Failures:
+  • tests/smoke/test_basic.py::test_will_fail: AssertionError: Function should return double of the value
+assert 2 == 4
+def test_will_fail():
+        result = SystemUnderTest().function(1)
+>       assert result == 4, "Function should return double of the value"
+E       AssertionError: Function should return double of the value
+E       assert 2 == 4
+
+tests\smoke\test_basic.py:29: AssertionError
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error: AssertionError: 
+
+assert_expectations() called at
+"C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:13" in test_delayed_response_with_error()
+
+Failed Expectations : 1
+
+1: Failed at "C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12", in test_delayed_response_with_error()
+	ErrorMessage:	{"key": "value"}
+    expect(response.json() == {}, response.text)
+requests_mock = <requests_mock.mocker.Mocker object at 0x0000020CF2C0F980>
+
+    def test_delayed_response_with_error(requests_mock):
+        url = "http://tests.com"
+        requests_mock.get(url, json={"key": "value"})
+    
+        response = requests.get(url)
+    
+        expect(response.status_code == 200, response.status_code)
+        expect(response.json() == {}, response.text)
+>       assert_expectations()
+
+tests\unit\test_delayed_assert.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_expectations():
+        'raise an assert if there are any failed expectations'
+        if _failed_expectations:
+>           assert False, _report_failures()
+E           AssertionError: 
+E           
+E           assert_expectations() called at
+E           "C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:13" in test_delayed_response_with_error()
+E           
+E           Failed Expectations : 1
+E           
+E           1: Failed at "C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12", in test_delayed_response_with_error()
+E           	ErrorMessage:	{"key": "value"}
+E               expect(response.json() == {}, response.text)
+
+.venv\Lib\site-packages\delayed_assert\delayed_assert.py:74: AssertionError
+  • tests/unit/test_mocks.py::test_mock_patching: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+mocker = <pytest_mock.plugin.MockerFixture object at 0x0000020CF2C75A00>
+
+    def test_mock_patching(mocker):
+        url = "https://2021.es.pycon.org/"
+        mocked = mocker.patch.object(requests, "get", return_value="intercepted")
+    
+        response = requests.get(url)
+        assert response == "intercepted"
+>       assert mocked.called_once()
+               ^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_mocks.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <MagicMock name='get' id='2254636015280'>, name = 'called_once'
+
+    def __getattr__(self, name):
+        if name in {'_mock_methods', '_mock_unsafe'}:
+            raise AttributeError(name)
+        elif self._mock_methods is not None:
+            if name not in self._mock_methods or name in _all_magics:
+                raise AttributeError("Mock object has no attribute %r" % name)
+        elif _is_magic(name):
+            raise AttributeError(name)
+        if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):
+            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:
+>               raise AttributeError(
+                    f"{name!r} is not a valid assertion. Use a spec "
+                    f"for the mock if {name!r} is meant to be an attribute.")
+E               AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+
+..\..\..\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:663: AttributeError
+  • tests/unit/test_mocks.py::test_mock_side_effect: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+mocker = <pytest_mock.plugin.MockerFixture object at 0x0000020CF10D5400>
+
+    def test_mock_side_effect(mocker):
+        mocked = mocker.patch.object(requests, "get", side_effect=KeyError("coconut"))
+    
+        with pytest.raises(KeyError) as exc_info:
+            requests.get("does not matter")
+        assert exc_info.value.args[0] == "coconut"
+        assert exc_info.typename == "KeyError"
+>       assert mocked.called_once()
+               ^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_mocks.py:34: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <MagicMock name='get' id='2254636502384'>, name = 'called_once'
+
+    def __getattr__(self, name):
+        if name in {'_mock_methods', '_mock_unsafe'}:
+            raise AttributeError(name)
+        elif self._mock_methods is not None:
+            if name not in self._mock_methods or name in _all_magics:
+                raise AttributeError("Mock object has no attribute %r" % name)
+        elif _is_magic(name):
+            raise AttributeError(name)
+        if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):
+            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:
+>               raise AttributeError(
+                    f"{name!r} is not a valid assertion. Use a spec "
+                    f"for the mock if {name!r} is meant to be an attribute.")
+E               AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+
+..\..\..\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:663: AttributeError
+
+CRITICAL PATHS:
+
+Test: tests/smoke/test_basic.py::test_will_fail
+Error: AssertionError: Function should return double of the value
+assert 2 == 4
+def test_will_fail():
+        result = SystemUnderTest().function(1)
+>       assert result == 4, "Function should return double of the value"
+E       AssertionError: Function should return double of the value
+E       assert 2 == 4
+
+tests\smoke\test_basic.py:29: AssertionError
+Downstream:
+  • tests/smoke/test_basic.py::test_will_fail → source/sut.py::SystemUnderTest::function
+  • tests/smoke/test_basic.py::test_will_fail → SystemUnderTest
+
+Test: tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+Error: AssertionError: 
+
+assert_expectations() called at
+"C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:13" in test_delayed_response_with_error()
+
+Failed Expectations : 1
+
+1: Failed at "C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12", in test_delayed_response_with_error()
+	ErrorMessage:	{"key": "value"}
+    expect(response.json() == {}, response.text)
+requests_mock = <requests_mock.mocker.Mocker object at 0x0000020CF2C0F980>
+
+    def test_delayed_response_with_error(requests_mock):
+        url = "http://tests.com"
+        requests_mock.get(url, json={"key": "value"})
+    
+        response = requests.get(url)
+    
+        expect(response.status_code == 200, response.status_code)
+        expect(response.json() == {}, response.text)
+>       assert_expectations()
+
+tests\unit\test_delayed_assert.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_expectations():
+        'raise an assert if there are any failed expectations'
+        if _failed_expectations:
+>           assert False, _report_failures()
+E           AssertionError: 
+E           
+E           assert_expectations() called at
+E           "C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:13" in test_delayed_response_with_error()
+E           
+E           Failed Expectations : 1
+E           
+E           1: Failed at "C:\Users\Mohadese\Desktop\test-python-pytest\pytest-samples\tests\unit\test_delayed_assert.py:12", in test_delayed_response_with_error()
+E           	ErrorMessage:	{"key": "value"}
+E               expect(response.json() == {}, response.text)
+
+.venv\Lib\site-packages\delayed_assert\delayed_assert.py:74: AssertionError
+Downstream:
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error → expect
+  • tests/unit/test_delayed_assert.py::test_delayed_response_with_error → assert_expectations
+
+Test: tests/unit/test_mocks.py::test_mock_patching
+Error: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+mocker = <pytest_mock.plugin.MockerFixture object at 0x0000020CF2C75A00>
+
+    def test_mock_patching(mocker):
+        url = "https://2021.es.pycon.org/"
+        mocked = mocker.patch.object(requests, "get", return_value="intercepted")
+    
+        response = requests.get(url)
+        assert response == "intercepted"
+>       assert mocked.called_once()
+               ^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_mocks.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <MagicMock name='get' id='2254636015280'>, name = 'called_once'
+
+    def __getattr__(self, name):
+        if name in {'_mock_methods', '_mock_unsafe'}:
+            raise AttributeError(name)
+        elif self._mock_methods is not None:
+            if name not in self._mock_methods or name in _all_magics:
+                raise AttributeError("Mock object has no attribute %r" % name)
+        elif _is_magic(name):
+            raise AttributeError(name)
+        if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):
+            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:
+>               raise AttributeError(
+                    f"{name!r} is not a valid assertion. Use a spec "
+                    f"for the mock if {name!r} is meant to be an attribute.")
+E               AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+
+..\..\..\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:663: AttributeError
+Downstream:
+  • tests/unit/test_mocks.py::test_mock_patching → called_once
+
+Test: tests/unit/test_mocks.py::test_mock_side_effect
+Error: AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+mocker = <pytest_mock.plugin.MockerFixture object at 0x0000020CF10D5400>
+
+    def test_mock_side_effect(mocker):
+        mocked = mocker.patch.object(requests, "get", side_effect=KeyError("coconut"))
+    
+        with pytest.raises(KeyError) as exc_info:
+            requests.get("does not matter")
+        assert exc_info.value.args[0] == "coconut"
+        assert exc_info.typename == "KeyError"
+>       assert mocked.called_once()
+               ^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_mocks.py:34: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <MagicMock name='get' id='2254636502384'>, name = 'called_once'
+
+    def __getattr__(self, name):
+        if name in {'_mock_methods', '_mock_unsafe'}:
+            raise AttributeError(name)
+        elif self._mock_methods is not None:
+            if name not in self._mock_methods or name in _all_magics:
+                raise AttributeError("Mock object has no attribute %r" % name)
+        elif _is_magic(name):
+            raise AttributeError(name)
+        if not self._mock_unsafe and (not self._mock_methods or name not in self._mock_methods):
+            if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:
+>               raise AttributeError(
+                    f"{name!r} is not a valid assertion. Use a spec "
+                    f"for the mock if {name!r} is meant to be an attribute.")
+E               AttributeError: 'called_once' is not a valid assertion. Use a spec for the mock if 'called_once' is meant to be an attribute.
+
+..\..\..\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:663: AttributeError
+Downstream:
+  • tests/unit/test_mocks.py::test_mock_side_effect → called_once
+
+HOTSPOTS (locus hints):
+- tests/smoke/test_basic.py::test_will_fail
+  functions: source/sut.py::SystemUnderTest::function
+  files: source/sut.py
+- tests/unit/test_delayed_assert.py::test_delayed_response_with_error
+  functions: 
+  files: 
+- tests/unit/test_mocks.py::test_mock_patching
+  functions: 
+  files: 
+- tests/unit/test_mocks.py::test_mock_side_effect
+  functions: 
+  files: 
+
+FUNCTION SNIPPETS (trimmed):
+
+source/sut.py::SystemUnderTest::function (line 11):
+"""
+Function that returns the double of a numeric
+
+Returns:
+    int or float depending on the input, None if None
+
+Raises:
+    TypeError if unexpected type
+"""
+    def function(value: Numeric|None) -> Numeric|None:
+            """Function that returns the double of a numeric
+    
+            Returns:
+                int or float depending on the input, None if None
+    
+            Raises:
+                TypeError if unexpected type
+    
+            """
+        ...
+
+FEW-SHOT EXAMPLES (style only, no chain-of-thought):
+
+INPUT:
+[EXAMPLE — STYLE & STRUCTURE ONLY, DO NOT COPY ASSUMPTIONS]
+GRAPH SUMMARY: 210 nodes, 402 edges.
+
+TEST SUMMARY:
+• Total: 65
+• Executed: 65 (✅58, ❌2, ⚠️5)
+• Failures detail:
+  - Tests.AsyncQueueTests::EnqueueDequeue_Race: InvalidOperationException: queue empty
+
+CRITICAL PATHS for each failed test:
+
+Test: Tests.AsyncQueueTests::EnqueueDequeue_Race
+Error: InvalidOperationException: queue empty
+Upstream:
+  • AsyncQueue.cs::DequeueAsync → AsyncQueue.cs::TryDequeue
+Downstream:
+  • Tests.AsyncQueueTests::EnqueueDequeue_Race
+
+FUNCTION SNIPPETS:
+
+AsyncQueue.cs::DequeueAsync (line 74):
+    public async Task<T> DequeueAsync() {
+        return TryDequeue(); // no await on producer signal
+    }
+
+AsyncQueue.cs::TryDequeue (line 33):
+    public T TryDequeue() { /* returns default if empty */ }
+OUTPUT:
+{
+  "analysis": [
+    {
+      "test_name": "Tests.AsyncQueueTests::EnqueueDequeue_Race",
+      "error": "InvalidOperationException: queue empty",
+      "call_path": ["AsyncQueue.cs::DequeueAsync", "AsyncQueue.cs::TryDequeue"],
+      "rationale": [
+        "1) DequeueAsync does not await the producer signal and directly calls TryDequeue",
+        "2) In a race condition, the consumer runs ahead of the producer",
+        "3) TryDequeue executes on an empty queue and throws an exception"
+      ],
+      "root_cause": "Lack of proper synchronization/signaling between producer/consumer",
+      "suggested_fixes": [
+        "Use SemaphoreSlim/TaskCompletionSource for signaling item readiness",
+        "Implement controlled behavior in TryDequeue for empty cases and concurrency tests"
+      ]
+    }
+  ]
+}
+
+RESPONSE FORMAT:
+Return JSON only. Do not add commentary, markdown fences or chain-of-thought. Keep `rationale` to ≤3 short bullets; keep `insight_bullets` to 2–4 concise bullets.
+Schema:
+{
+  "analysis": [
+    {
+      "test_name": "<string>",
+      "error": "<string>",
+      "call_path": [
+        "<node_1>",
+        "..."
+      ],
+      "locus": {
+        "files": [
+          "<relpath>",
+          "..."
+        ],
+        "functions": [
+          "<file::Class::func>",
+          "..."
+        ]
+      },
+      "failure_type": "<short normalized type, e.g. AssertionError | AttributeError | NullPointerException | Timeout | Network | Configuration | Mocking | DataMismatch | Other>",
+      "root_cause": "<precise multi-sentence explanation>",
+      "severity": "<low|medium|high>",
+      "suggested_fixes": [
+        "<actionable fix 1>",
+        "<actionable fix 2>"
+      ],
+      "rationale": [
+        "<very short bullets, no CoT>",
+        "..."
+      ],
+      "insight_bullets": [
+        "<impact bullet 1>",
+        "<impact bullet 2>",
+        "..."
+      ]
+    }
+  ]
+}
