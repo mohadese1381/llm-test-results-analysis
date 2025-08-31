@@ -1,6 +1,6 @@
 [project]
 name = "failtrace"
-version = "0.6.7"
+version = "0.6.9"
 description = "Leveraging Large Language Models for Automated Test Results Analysis"
 readme = "README.md"
 license = { text = "MIT" }
@@ -41,11 +41,9 @@ build-backend = "poetry.core.masonry.api"
 packages = [{ include = "failtrace" }]
 
 include = [
-  "failtrace/report/*.html",
-  "failtrace/report/*.css",
-  "failtrace/report/*.js",
-  "failtrace/llm/*.json",
-  "failtrace/llm/few_shots/*.json"
+  "failtrace/failtrace/report/**",
+  "failtrace/failtrace/llm/*.json",
+  "failtrace/failtrace/llm/few_shots/*.json"
 ]
 
 exclude = [
