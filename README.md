@@ -127,8 +127,11 @@ pytest
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please fork the repo and submit a pull request with clear commit messages.
-If you encounter bugs or want new features, open an [issue](https://github.com/your-username/failtrace/issues).
+Contributions are always welcome to improve **FailTrace**, whether it’s fixing bugs, enhancing documentation, or adding new features.  
+To get started, fork the repository, create a new branch, and set up a virtual environment with `pip install -e ".[dev]"`.  
+Please ensure that tests pass locally by running `pytest` before submitting your work.  
+Use clear commit messages and keep pull requests focused and concise for easier review.  
+When ready, push your branch and open a Pull Request—we’ll be happy to review it!
 
 ---
 
@@ -141,3 +144,5 @@ Licensed under the [MIT License](LICENSE)
 ## 👩‍💻 Author
 
 [**Mohadese Akhoondy**](mailto:m.akhoondy1381@gmail.com)  
+
+---
