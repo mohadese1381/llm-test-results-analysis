@@ -231,6 +231,7 @@ body {
   border-radius: 8px;
   font-size: 12px;
 }
+
 body.light-mode {
   --bg: #f5f5f5;
   --card: #ffffff;
@@ -263,6 +264,19 @@ body.light-mode .fix-badge {
   background: #f3f4f6;
   border-color: #d1d5db;
   color: #374151;
+}
+.table-fail td:nth-child(1) {
+  max-width: 120px; 
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-fail td:nth-child(2) {
+  max-width: 200px; 
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 

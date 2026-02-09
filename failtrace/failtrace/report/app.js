@@ -136,6 +136,8 @@ let testsOverviewChart, failureTypesChart, riskBubblesChart;
 
     const tdTest = document.createElement("td");
     tdTest.textContent = item.title || "";
+    tdTest.title = item.title || ""; 
+
     const tdRoot = document.createElement("td");
     tdRoot.textContent = item.root_cause || "";
 

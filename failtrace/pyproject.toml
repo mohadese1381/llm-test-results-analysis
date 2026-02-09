@@ -1,6 +1,6 @@
 [project]
 name = "failtrace"
-version = "0.7.1"
+version = "0.0.8"
 description = "Leveraging Large Language Models for Automated Test Results Analysis"
 readme = "README.md"
 license = { text = "MIT" }
