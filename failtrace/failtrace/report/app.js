@@ -1,3 +1,4 @@
+let testsOverviewChart, failureTypesChart, riskBubblesChart;
 (function () {
   const r = typeof REPORT === "object" && REPORT ? REPORT : {};
   const proj = r.project || {};
@@ -121,7 +122,9 @@
     if (!layers || (!lHeu.length && !lGraph.length && !lLlm.length)) {
       let locParts = [];
       if (Array.isArray(item.functions) && item.functions.length) {
-        locParts.push("Suggested: " + toPretty(uniq(item.functions).join(", ")));
+        locParts.push(
+          "Suggested: " + toPretty(uniq(item.functions).join(", "))
+        );
       }
       if (item.location) {
         locParts.push(toPretty(item.location));
@@ -170,7 +173,7 @@
         txt.textContent = label;
         txt.style.fontSize = "12px";
         txt.style.opacity = "0.85";
-        txt.style.whiteSpace = "nowrap"; // keep title in one row
+        txt.style.whiteSpace = "nowrap";
 
         title.appendChild(badge);
         title.appendChild(txt);
@@ -192,7 +195,6 @@
         return wrap;
       };
 
-      // ⬇️ shorter labels so Priority 1 & 2 stay on one line (like "LLM Suggestion")
       const gBlock = makeLayer(1, "Graph Match", lGraph, "#60a5fa");
       const hBlock = makeLayer(2, "Error Clues", lHeu, "#34d399");
       const lBlock = makeLayer(3, "LLM Suggestion", lLlm, "#f59e0b");
@@ -223,7 +225,7 @@
   }
 
   const ctx1 = document.getElementById("testsOverviewChart").getContext("2d");
-  new Chart(ctx1, {
+  testsOverviewChart = new Chart(ctx1, {
     type: "doughnut",
     data: {
       labels: ["Passed", "Failed", "Skipped"],
@@ -261,7 +263,7 @@
     "#a7f3d0",
     "#fde68a",
   ];
-  new Chart(ctx2, {
+  failureTypesChart = new Chart(ctx2, {
     type: "bar",
     data: {
       labels,
@@ -309,7 +311,7 @@
     return "rgba(25,169,116,0.9)";
   };
 
-  new Chart(ctx3, {
+  riskBubblesChart = new Chart(ctx3, {
     type: "bubble",
     data: {
       datasets: [
@@ -370,3 +372,28 @@
     },
   });
 })();
+function toggleLightMode() {
+  document.body.classList.toggle("light-mode");
+  updateChartColors();
+}
+
+function updateChartColors() {
+  const colors = document.body.classList.contains("light-mode")
+    ? { text: "#111827", grid: "rgba(0,0,0,0.1)" }
+    : { text: "#cfe0f0", grid: "rgba(207,224,240,0.08)" };
+
+  [testsOverviewChart, failureTypesChart, riskBubblesChart].forEach((c) => {
+    if (!c) return;
+    c.options.scales.x && (c.options.scales.x.ticks.color = colors.text);
+    c.options.scales.y && (c.options.scales.y.ticks.color = colors.text);
+    c.options.scales.x && (c.options.scales.x.grid.color = colors.grid);
+    c.options.scales.y && (c.options.scales.y.grid.color = colors.grid);
+    c.options.plugins.tooltip.backgroundColor =
+      colors.text === "#111827" ? "#111827" : "#0c1117";
+    c.options.plugins.tooltip.titleColor = colors.text;
+    c.options.plugins.tooltip.bodyColor = colors.text;
+    c.options.plugins?.legend?.labels &&
+      (c.options.plugins.legend.labels.color = colors.text);
+    c.update();
+  });
+}

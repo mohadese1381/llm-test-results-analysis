@@ -13,7 +13,7 @@ try:
 
     CSHARP_LANG = Language(_cs_capsule())
 except ImportError:
-    from tree_sitter_languages import get_language  # type: ignore
+    from tree_sitter_languages import get_language  
 
     CSHARP_LANG = get_language("c_sharp")
 PARSER = Parser(CSHARP_LANG)

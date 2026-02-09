@@ -231,6 +231,40 @@ body {
   border-radius: 8px;
   font-size: 12px;
 }
+body.light-mode {
+  --bg: #f5f5f5;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --text: #111827;
+  --sep: #e5e7eb;
+  --chip-bg: #e5e7eb;
+}
+
+body.light-mode .kpi {
+  background: #f3f4f6;
+}
+
+body.light-mode .table th {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+body.light-mode .table td {
+  background: #ffffff;
+  color: #111827;
+}
+
+body.light-mode .table tbody tr:hover td {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+body.light-mode .fix-badge {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
 
 @media (max-width: 960px) {
   .grid {
