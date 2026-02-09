@@ -266,19 +266,11 @@ body.light-mode .fix-badge {
   color: #374151;
 }
 .table-fail td:nth-child(1) {
-  max-width: 120px; 
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-.table-fail td:nth-child(2) {
-  max-width: 200px; 
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 
 @media (max-width: 960px) {
   .grid {

@@ -135,9 +135,8 @@ let testsOverviewChart, failureTypesChart, riskBubblesChart;
     }
 
     const tdTest = document.createElement("td");
-    tdTest.textContent = item.title || "";
-    tdTest.title = item.title || ""; 
-
+    tdTest.textContent = cleanTestTitle(item.title || "");
+    tdTest.title = item.title || "";
     const tdRoot = document.createElement("td");
     tdRoot.textContent = item.root_cause || "";
 
@@ -394,6 +393,7 @@ function updateChartColors() {
       colors.text === "#111827" ? "#111827" : "#0c1117";
     c.options.plugins.tooltip.titleColor = colors.text;
     c.options.plugins.tooltip.bodyColor = colors.text;
+
     c.options.plugins?.legend?.labels &&
       (c.options.plugins.legend.labels.color = colors.text);
     c.update();
